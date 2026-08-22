@@ -45,7 +45,7 @@ export function KartuAbsen({
 
   return (
     <>
-      <div className="px-5">
+      <div className="px-5 lg:px-0">
         <div className="bg-surface border-app relative rounded-[var(--radius-card)] border p-6">
           <div className="relative text-center">
             <p className="eyebrow">Waktu sekarang · WIB</p>

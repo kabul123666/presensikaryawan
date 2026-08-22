@@ -88,151 +88,161 @@ export default async function HalamanPengajuan() {
 
   return (
     <div className="pb-6">
-      <header className="bg-surface border-app pt-safe border-b px-5 pb-16">
-        <h1 className="text-body pt-4 text-[19px] font-extrabold">Pengajuan</h1>
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-16 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7 lg:pb-7">
+        <h1 className="text-body pt-4 text-[19px] font-extrabold lg:pt-2">Pengajuan</h1>
         <p className="text-subtle mt-0.5 text-xs">Cuti, lembur, dan koreksi kehadiran</p>
       </header>
 
-      {/* Saldo cuti */}
-      <div className="-mt-12 px-5">
-        <div className="bg-surface rounded-[var(--radius-sheet)] p-5 shadow-[var(--shadow-raised)]">
-          <p className="text-subtle text-xs font-semibold">Sisa cuti tahunan {tahun}</p>
-          <p className="tnum text-body mt-1 text-[32px] leading-none font-extrabold">
-            {sisaCuti} <span className="text-muted text-base font-bold">hari</span>
-          </p>
-          {cutiTahunan && (
-            <div className="border-app text-muted mt-4 grid grid-cols-3 gap-2 border-t pt-4 text-center text-[11px]">
-              <div>
-                <p className="text-body tnum text-sm font-extrabold">
-                  {cutiTahunan.kuota}
-                </p>
-                <p className="mt-0.5">Kuota</p>
-              </div>
-              <div>
-                <p className="text-body tnum text-sm font-extrabold">
-                  +{cutiTahunan.carryOver}
-                </p>
-                <p className="mt-0.5">Sisa tahun lalu</p>
-              </div>
-              <div>
-                <p className="text-body tnum text-sm font-extrabold">
-                  {cutiTahunan.terpakai}
-                </p>
-                <p className="mt-0.5">Terpakai</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Jenis pengajuan */}
-      <section className="mt-6 px-5">
-        <h2 className="text-body text-sm font-extrabold tracking-tight">
-          Jenis pengajuan
-        </h2>
-        <div className="mt-3 grid grid-cols-2 gap-2.5">
-          {jenisAjuan.map(({ href, label, Ikon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="bg-surface border-app hover:border-brand-300 flex items-center gap-3 rounded-[var(--radius-card)] border px-3.5 py-3.5 transition-colors"
-            >
-              <Ikon size={36} />
-              <span className="text-body text-[13px] leading-tight font-bold">
-                {label}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Riwayat pengajuan */}
-      <section className="mt-6 px-5">
-        <h2 className="text-body text-sm font-extrabold tracking-tight">
-          Riwayat pengajuan
-        </h2>
-
-        {daftar.length === 0 ? (
-          <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-5 py-10 text-center">
-            <p className="text-body text-sm font-bold">Belum ada pengajuan</p>
-            <p className="text-muted mt-1 text-[13px]">
-              Pengajuan yang Anda buat akan muncul di sini.
-            </p>
-          </div>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {daftar.map((r) => {
-              // Rincian tiap jenis disimpan di payload, jadi tanggal dan jamnya
-              // dibaca dari sana — bukan dari waktu pengajuan dibuat.
-              const p = (r.payload ?? {}) as Record<string, unknown>;
-              const tgl = typeof p.tanggal === "string" ? p.tanggal : null;
-              const mulai = typeof p.mulai === "string" ? p.mulai : null;
-              const selesai = typeof p.selesai === "string" ? p.selesai : null;
-              const sampai = typeof p.sampai === "string" ? p.sampai : null;
-
-              const waktu = [
-                tgl ? tanggalPendek(tgl) : null,
-                sampai && sampai !== tgl ? `– ${tanggalPendek(sampai)}` : null,
-                mulai && selesai ? `${mulai.slice(0, 5)} – ${selesai.slice(0, 5)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" ");
-
-              return (
-                <li
-                  key={r.id}
-                  className="bg-surface border-app overflow-hidden rounded-[var(--radius-card)] border"
-                >
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <span className="bg-brand-50 dark:bg-brand-900/40 grid size-9 shrink-0 place-items-center rounded-lg">
-                      <FileText
-                        size={17}
-                        className="text-brand-600 dark:text-brand-300"
-                      />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-body text-sm font-bold">{LABEL_TIPE[r.tipe]}</p>
-                      <p className="text-subtle text-[12px]">
-                        Diajukan {tanggalPendek(tanggalWIB(r.createdAt))}
-                      </p>
-                    </div>
-                    <BadgePengajuan status={r.status} />
+      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start lg:gap-5">
+        <div className="lg:space-y-5">
+          {/* Saldo cuti */}
+          <div className="-mt-12 px-5 lg:mt-0 lg:px-0">
+            <div className="bg-surface rounded-[var(--radius-sheet)] p-5 shadow-[var(--shadow-raised)]">
+              <p className="text-subtle text-xs font-semibold">
+                Sisa cuti tahunan {tahun}
+              </p>
+              <p className="tnum text-body mt-1 text-[32px] leading-none font-extrabold">
+                {sisaCuti} <span className="text-muted text-base font-bold">hari</span>
+              </p>
+              {cutiTahunan && (
+                <div className="border-app text-muted mt-4 grid grid-cols-3 gap-2 border-t pt-4 text-center text-[11px]">
+                  <div>
+                    <p className="text-body tnum text-sm font-extrabold">
+                      {cutiTahunan.kuota}
+                    </p>
+                    <p className="mt-0.5">Kuota</p>
                   </div>
+                  <div>
+                    <p className="text-body tnum text-sm font-extrabold">
+                      +{cutiTahunan.carryOver}
+                    </p>
+                    <p className="mt-0.5">Sisa tahun lalu</p>
+                  </div>
+                  <div>
+                    <p className="text-body tnum text-sm font-extrabold">
+                      {cutiTahunan.terpakai}
+                    </p>
+                    <p className="mt-0.5">Terpakai</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
-                  <dl className="border-app space-y-1.5 border-t px-4 py-3 text-[13px]">
-                    {waktu && (
-                      <div className="flex gap-2">
-                        <dt className="text-muted w-24 shrink-0">Tanggal/Waktu</dt>
-                        <dd className="text-body flex-1 font-semibold">{waktu}</dd>
-                      </div>
-                    )}
-                    {r.alasan && (
-                      <div className="flex gap-2">
-                        <dt className="text-muted w-24 shrink-0">Alasan</dt>
-                        <dd className="text-body flex-1 font-semibold">{r.alasan}</dd>
-                      </div>
-                    )}
-                    {petaCatatan.get(r.id) && (
-                      <div className="flex gap-2">
-                        <dt className="text-muted w-24 shrink-0">Catatan</dt>
-                        <dd className="text-body flex-1 font-semibold">
-                          {petaCatatan.get(r.id)}
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
+          {/* Jenis pengajuan */}
+          <section className="mt-6 px-5 lg:mt-0 lg:px-0">
+            <h2 className="text-body text-sm font-extrabold tracking-tight">
+              Jenis pengajuan
+            </h2>
+            <div className="mt-3 grid grid-cols-2 gap-2.5">
+              {jenisAjuan.map(({ href, label, Ikon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="bg-surface border-app hover:border-brand-300 flex items-center gap-3 rounded-[var(--radius-card)] border px-3.5 py-3.5 transition-colors"
+                >
+                  <Ikon size={36} />
+                  <span className="text-body text-[13px] leading-tight font-bold">
+                    {label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
 
-                  {r.status === "PENDING" && (
-                    <div className="border-app border-t px-4 py-2.5">
-                      <TombolBatal id={r.id} label={LABEL_TIPE[r.tipe]} />
+        {/* Riwayat pengajuan */}
+        <section className="mt-6 px-5 lg:mt-0 lg:px-0">
+          <h2 className="text-body text-sm font-extrabold tracking-tight">
+            Riwayat pengajuan
+          </h2>
+
+          {daftar.length === 0 ? (
+            <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-5 py-10 text-center">
+              <p className="text-body text-sm font-bold">Belum ada pengajuan</p>
+              <p className="text-muted mt-1 text-[13px]">
+                Pengajuan yang Anda buat akan muncul di sini.
+              </p>
+            </div>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {daftar.map((r) => {
+                // Rincian tiap jenis disimpan di payload, jadi tanggal dan jamnya
+                // dibaca dari sana — bukan dari waktu pengajuan dibuat.
+                const p = (r.payload ?? {}) as Record<string, unknown>;
+                const tgl = typeof p.tanggal === "string" ? p.tanggal : null;
+                const mulai = typeof p.mulai === "string" ? p.mulai : null;
+                const selesai = typeof p.selesai === "string" ? p.selesai : null;
+                const sampai = typeof p.sampai === "string" ? p.sampai : null;
+
+                const waktu = [
+                  tgl ? tanggalPendek(tgl) : null,
+                  sampai && sampai !== tgl ? `– ${tanggalPendek(sampai)}` : null,
+                  mulai && selesai
+                    ? `${mulai.slice(0, 5)} – ${selesai.slice(0, 5)}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
+                return (
+                  <li
+                    key={r.id}
+                    className="bg-surface border-app overflow-hidden rounded-[var(--radius-card)] border"
+                  >
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <span className="bg-brand-50 dark:bg-brand-900/40 grid size-9 shrink-0 place-items-center rounded-lg">
+                        <FileText
+                          size={17}
+                          className="text-brand-600 dark:text-brand-300"
+                        />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-body text-sm font-bold">
+                          {LABEL_TIPE[r.tipe]}
+                        </p>
+                        <p className="text-subtle text-[12px]">
+                          Diajukan {tanggalPendek(tanggalWIB(r.createdAt))}
+                        </p>
+                      </div>
+                      <BadgePengajuan status={r.status} />
                     </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+
+                    <dl className="border-app space-y-1.5 border-t px-4 py-3 text-[13px]">
+                      {waktu && (
+                        <div className="flex gap-2">
+                          <dt className="text-muted w-24 shrink-0">Tanggal/Waktu</dt>
+                          <dd className="text-body flex-1 font-semibold">{waktu}</dd>
+                        </div>
+                      )}
+                      {r.alasan && (
+                        <div className="flex gap-2">
+                          <dt className="text-muted w-24 shrink-0">Alasan</dt>
+                          <dd className="text-body flex-1 font-semibold">{r.alasan}</dd>
+                        </div>
+                      )}
+                      {petaCatatan.get(r.id) && (
+                        <div className="flex gap-2">
+                          <dt className="text-muted w-24 shrink-0">Catatan</dt>
+                          <dd className="text-body flex-1 font-semibold">
+                            {petaCatatan.get(r.id)}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+
+                    {r.status === "PENDING" && (
+                      <div className="border-app border-t px-4 py-2.5">
+                        <TombolBatal id={r.id} label={LABEL_TIPE[r.tipe]} />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

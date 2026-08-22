@@ -18,14 +18,14 @@ export default async function HalamanMenu() {
 
   return (
     <div className="pb-6">
-      <header className="bg-surface border-app pt-safe border-b px-5 pb-5">
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
         <Link
           href="/"
-          className="text-muted hover:text-body inline-flex items-center gap-1.5 pt-4 text-[13px] font-medium transition-colors"
+          className="text-muted hover:text-body inline-flex items-center gap-1.5 pt-4 text-[13px] font-medium transition-colors lg:hidden"
         >
           <ArrowLeft size={15} /> Beranda
         </Link>
-        <h1 className="text-body mt-3 text-[19px] font-extrabold">Semua Menu</h1>
+        <h1 className="text-body mt-3 text-[19px] font-extrabold lg:mt-2">Semua Menu</h1>
         <p className="text-subtle mt-0.5 text-xs">
           Seluruh fitur yang tersedia untuk Anda
         </p>

@@ -20,6 +20,9 @@ import { cn } from "@/lib/utils";
  * Ikon 3D bagus pada ukuran besar di beranda, tetapi pada dua puluh empat
  * piksel detailnya saling menumpuk sehingga satu ikon sulit dibedakan dari
  * tetangganya. Garis tunggal tetap terbaca pada ukuran itu.
+ *
+ * Mulai lebar `lg` bilah ini disembunyikan: navigasinya diambil alih sidebar
+ * agar tidak ada dua navigasi yang berlaku bersamaan.
  */
 type Tujuan = {
   label: string;
@@ -45,7 +48,7 @@ export function NavBawah({ role }: { role: Role }) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="border-app bg-surface pb-safe shrink-0 border-t"
+      className="border-app bg-surface pb-safe shrink-0 border-t lg:hidden"
     >
       <ul className="grid grid-cols-5 items-end">
         {MENU.map((m) => {

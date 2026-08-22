@@ -32,7 +32,7 @@ export function DaftarNotifikasi({ daftar }: { daftar: BarisNotifikasi[] }) {
 
   if (daftar.length === 0) {
     return (
-      <div className="border-app bg-surface mx-5 mt-5 rounded-[var(--radius-card)] border border-dashed px-5 py-12 text-center">
+      <div className="border-app bg-surface mx-5 mt-5 rounded-[var(--radius-card)] border border-dashed px-5 py-12 text-center lg:mx-0">
         <p className="text-body text-sm font-medium">Belum ada notifikasi</p>
         <p className="text-muted mt-1.5 text-[13px]">
           Hasil persetujuan cuti, lembur, dan verifikasi tindakan muncul di sini.
@@ -42,7 +42,7 @@ export function DaftarNotifikasi({ daftar }: { daftar: BarisNotifikasi[] }) {
   }
 
   return (
-    <div className="px-5">
+    <div className="px-5 lg:mt-5 lg:px-0">
       {belumDibaca > 0 && (
         <button
           onClick={() =>

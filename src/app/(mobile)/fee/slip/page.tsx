@@ -36,8 +36,8 @@ export default async function HalamanSlipSaya({
   ]);
 
   return (
-    <div className="pb-6">
-      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 print:hidden">
+    <div className="pb-6 lg:mx-auto lg:max-w-[720px]">
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7 print:hidden">
         <Link
           href="/fee"
           className="text-muted hover:text-body inline-flex items-center gap-1.5 pt-4 text-[13px] font-medium transition-colors"
@@ -50,7 +50,7 @@ export default async function HalamanSlipSaya({
         </div>
       </header>
 
-      <div className="mt-4 px-5 print:mt-0 print:px-0">
+      <div className="mt-4 px-5 lg:px-0 print:mt-0 print:px-0">
         <SlipInsentifCetak slip={slip} profil={profil} tahun={tahun} bulan={bulan} />
       </div>
     </div>

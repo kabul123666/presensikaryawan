@@ -50,9 +50,9 @@ export default async function HalamanPengaturanAkun() {
   await wajibMasuk();
 
   return (
-    <div className="pb-10">
-      <header className="bg-brand-700 pt-safe px-5 pb-5">
-        <div className="flex items-center gap-3 pt-4">
+    <div className="pb-10 lg:mx-auto lg:max-w-[720px]">
+      <header className="bg-brand-700 pt-safe px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:px-7">
+        <div className="flex items-center gap-3 pt-4 lg:pt-2">
           <Link
             href="/profil"
             className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"

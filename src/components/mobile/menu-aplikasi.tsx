@@ -201,7 +201,7 @@ export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
     .slice(0, 7);
 
   return (
-    <section className="mt-6 px-5">
+    <section className="mt-6 px-5 lg:mt-0 lg:px-0">
       <div className="flex items-center justify-between">
         <h2 className="text-body text-sm font-extrabold tracking-tight">Menu</h2>
         <Link
@@ -211,7 +211,7 @@ export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
           Ubah
         </Link>
       </div>
-      <div className="mt-2 grid grid-cols-4 gap-x-1 gap-y-3">
+      <div className="bg-surface border-app mt-2 grid grid-cols-4 gap-x-1 gap-y-3 lg:rounded-[var(--radius-card)] lg:border lg:p-3">
         {utama.map((m) => (
           <Petak key={m.label} m={m} />
         ))}
@@ -234,7 +234,7 @@ export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
 
 export function MenuAplikasi({ penyetuju }: { penyetuju: boolean }) {
   return (
-    <div className="mt-6 space-y-6 px-5">
+    <div className="mt-6 space-y-6 px-5 lg:mt-5 lg:px-0">
       {KELOMPOK.map((k) => {
         const menu = k.menu.filter((m) => !m.penyetuju || penyetuju);
         if (menu.length === 0) return null;
@@ -242,7 +242,7 @@ export function MenuAplikasi({ penyetuju }: { penyetuju: boolean }) {
         return (
           <section key={k.judul}>
             <h2 className="text-body text-sm font-extrabold tracking-tight">{k.judul}</h2>
-            <div className="mt-2 grid grid-cols-4 gap-x-1 gap-y-3">
+            <div className="bg-surface border-app mt-2 grid grid-cols-4 gap-x-1 gap-y-3 lg:grid-cols-8 lg:rounded-[var(--radius-card)] lg:border lg:p-3">
               {menu.map((m) => (
                 <Petak key={m.label} m={m} />
               ))}

@@ -79,9 +79,9 @@ export default async function HalamanFormPengajuan({
   const kebijakan = await bacaPengaturan("kebijakan_absensi");
 
   return (
-    <div className="pb-6">
-      <header className="bg-brand-700 pt-safe px-5 pb-5">
-        <div className="flex items-center gap-3 pt-4">
+    <div className="pb-6 lg:mx-auto lg:max-w-[720px]">
+      <header className="bg-brand-700 pt-safe px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:px-7">
+        <div className="flex items-center gap-3 pt-4 lg:pt-2">
           <Link
             href={`/pengajuan/${jenis}`}
             className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"

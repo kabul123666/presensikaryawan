@@ -91,8 +91,8 @@ export default async function HalamanDaftarJenis({
 
   return (
     <div className="pb-6">
-      <header className="bg-brand-700 pt-safe px-5 pb-5">
-        <div className="flex items-center gap-3 pt-4">
+      <header className="bg-brand-700 pt-safe px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:px-7">
+        <div className="flex items-center gap-3 pt-4 lg:pt-2">
           <Link
             href="/pengajuan"
             className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"
@@ -112,7 +112,7 @@ export default async function HalamanDaftarJenis({
       </header>
 
       {milikJenis.length === 0 ? (
-        <div className="px-5">
+        <div className="px-5 lg:px-0">
           <div className="border-app bg-surface mt-5 rounded-[var(--radius-card)] border border-dashed px-5 py-12 text-center">
             <FileText size={26} className="text-subtle mx-auto" />
             <p className="text-body mt-3 text-sm font-bold">{info.kosong}</p>
@@ -122,7 +122,7 @@ export default async function HalamanDaftarJenis({
           </div>
         </div>
       ) : (
-        <ul className="mt-4 space-y-3 px-5">
+        <ul className="mt-4 space-y-3 px-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0 lg:px-0">
           {milikJenis.map((r) => {
             const p = (r.payload ?? {}) as Record<string, unknown>;
             const tgl = typeof p.tanggal === "string" ? p.tanggal : null;

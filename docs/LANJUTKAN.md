@@ -63,7 +63,14 @@ admin · beranda bergaya aplikasi kepegawaian · menu pilihan yang bisa diatur
 karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · halaman
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
 dan formulir pengajuan per jenis · halaman riwayat kehadiran bergaya aplikasi
-kepegawaian.
+kepegawaian · tampilan desktop untuk karyawan (sidebar + dua kolom).
+
+Tampilan karyawan punya dua bentuk dari satu berkas halaman. Di bawah lebar
+`lg` (1024px): satu kolom selebar 430px dengan bilah bawah, seperti sebelumnya.
+Mulai `lg`: sidebar kiri (`src/components/karyawan/sidebar-desktop.tsx`), bilah
+bawah disembunyikan, isi dibatasi 1120px dan disusun dua kolom lewat varian
+`lg:`. Halaman berisi formulir dibatasi 720px. Kalau menambah halaman karyawan
+baru, ikuti pola yang sama — jangan membuat berkas terpisah untuk desktop.
 
 ## Belum dikerjakan
 

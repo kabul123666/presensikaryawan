@@ -70,8 +70,8 @@ export default async function BerandaKaryawan() {
   return (
     <div className="pb-6">
       {/* ------------------------------------------------------- Kepala */}
-      <header className="bg-brand-700 pt-safe px-5 pb-20">
-        <div className="flex items-start justify-between pt-4">
+      <header className="bg-brand-700 pt-safe px-5 pb-20 lg:flex lg:items-center lg:gap-8 lg:rounded-[var(--radius-sheet)] lg:px-7 lg:pb-7">
+        <div className="flex items-start justify-between pt-4 lg:min-w-0 lg:flex-1 lg:pt-2">
           <div className="min-w-0">
             {profil.nama && (
               <span className="inline-block rounded-md bg-white/15 px-2 py-1 text-[11px] font-bold text-white">
@@ -87,7 +87,7 @@ export default async function BerandaKaryawan() {
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1 lg:hidden">
             <Link
               href="/notifikasi"
               className="relative grid size-10 place-items-center rounded-full text-white/90 transition-colors hover:bg-white/10"
@@ -113,7 +113,7 @@ export default async function BerandaKaryawan() {
         </div>
 
         {/* Ringkasan hari ini — tanggal, jam shift, dan jam yang tercatat */}
-        <div className="bg-surface mt-5 rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-raised)]">
+        <div className="bg-surface mt-5 rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-raised)] lg:mt-0 lg:w-[440px] lg:shrink-0 lg:p-5">
           <div className="flex items-center justify-between">
             <p className="text-body text-[13px] font-bold">{tanggalPanjang(hariIni)}</p>
             <p className="tnum text-brand-700 dark:text-brand-300 text-[13px] font-bold">
@@ -153,81 +153,90 @@ export default async function BerandaKaryawan() {
         </div>
       </header>
 
-      {/* -------------------------------------------------- Kartu absen */}
-      <div className="-mt-14">
-        <KartuAbsen
-          sudahMasuk={sudahMasuk}
-          sudahPulang={sudahPulang}
-          jadwal={
-            jadwal.shift
-              ? {
-                  nama: jadwal.shift.nama,
-                  jamMasuk: jadwal.shift.jamMasuk,
-                  jamPulang: jadwal.shift.jamPulang,
-                }
-              : null
-          }
-          lokasi={
-            lokasi
-              ? {
-                  nama: lokasi.nama,
-                  lat: lokasi.lat,
-                  lng: lokasi.lng,
-                  radiusM: lokasi.radiusM,
-                }
-              : null
-          }
-          bolehTanpaShift={kebijakan.izinkanAbsenTanpaShift}
-          isiFormTindakan={pengguna.isiFormTindakan}
-          daftarTindakan={daftarTindakan}
-        />
-      </div>
-
-      {/* Status hari ini */}
-      {absenHariIni && (
-        <div className="mt-4 px-5">
-          <div className="bg-surface border-app flex items-center justify-between rounded-[var(--radius-card)] border px-4 py-3">
-            <span className="text-muted text-sm font-semibold">Status hari ini</span>
-            <BadgeAbsen status={absenHariIni.status} />
+      {/* Dua kolom di komputer: yang dikerjakan tiap hari di kiri, kabar di kanan */}
+      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
+        <div className="lg:space-y-5">
+          {/* -------------------------------------------------- Kartu absen */}
+          <div className="-mt-14 lg:mt-0">
+            <KartuAbsen
+              sudahMasuk={sudahMasuk}
+              sudahPulang={sudahPulang}
+              jadwal={
+                jadwal.shift
+                  ? {
+                      nama: jadwal.shift.nama,
+                      jamMasuk: jadwal.shift.jamMasuk,
+                      jamPulang: jadwal.shift.jamPulang,
+                    }
+                  : null
+              }
+              lokasi={
+                lokasi
+                  ? {
+                      nama: lokasi.nama,
+                      lat: lokasi.lat,
+                      lng: lokasi.lng,
+                      radiusM: lokasi.radiusM,
+                    }
+                  : null
+              }
+              bolehTanpaShift={kebijakan.izinkanAbsenTanpaShift}
+              isiFormTindakan={pengguna.isiFormTindakan}
+              daftarTindakan={daftarTindakan}
+            />
           </div>
-        </div>
-      )}
 
-      <MenuUtama pilihan={karyawan?.menuBeranda} />
-
-      {/* ------------------------------------------- Info dari manajemen */}
-      <section className="mt-7 px-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-body text-sm font-extrabold tracking-tight">
-            Info dari Manajemen
-          </h2>
-          <Link
-            href="/notifikasi"
-            className="text-brand-700 dark:text-brand-300 text-xs font-semibold"
-          >
-            Semua
-          </Link>
-        </div>
-
-        {pengumuman ? (
-          <article className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border p-4">
-            <div className="flex items-center gap-2">
-              <span className="bg-brand-50 dark:bg-brand-900/40 grid size-8 place-items-center rounded-lg">
-                <Megaphone size={15} className="text-brand-600 dark:text-brand-300" />
-              </span>
-              <p className="text-body flex-1 text-sm font-bold">{pengumuman.judul}</p>
+          {/* Status hari ini */}
+          {absenHariIni && (
+            <div className="mt-4 px-5 lg:mt-0 lg:px-0">
+              <div className="bg-surface border-app flex items-center justify-between rounded-[var(--radius-card)] border px-4 py-3">
+                <span className="text-muted text-sm font-semibold">Status hari ini</span>
+                <BadgeAbsen status={absenHariIni.status} />
+              </div>
             </div>
-            <p className="text-muted mt-2.5 text-[13px] leading-relaxed">
-              {pengumuman.isi}
-            </p>
-          </article>
-        ) : (
-          <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-4 py-8 text-center">
-            <Megaphone size={22} className="text-subtle mx-auto" />
-            <p className="text-muted mt-2 text-[13px]">Belum ada info dari manajemen</p>
-          </div>
-        )}
-      </section>
+          )}
+
+          <MenuUtama pilihan={karyawan?.menuBeranda} />
+        </div>
+
+        <div>
+          {/* ------------------------------------------- Info dari manajemen */}
+          <section className="mt-7 px-5 lg:mt-0 lg:px-0">
+            <div className="flex items-center justify-between">
+              <h2 className="text-body text-sm font-extrabold tracking-tight">
+                Info dari Manajemen
+              </h2>
+              <Link
+                href="/notifikasi"
+                className="text-brand-700 dark:text-brand-300 text-xs font-semibold"
+              >
+                Semua
+              </Link>
+            </div>
+
+            {pengumuman ? (
+              <article className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border p-4">
+                <div className="flex items-center gap-2">
+                  <span className="bg-brand-50 dark:bg-brand-900/40 grid size-8 place-items-center rounded-lg">
+                    <Megaphone size={15} className="text-brand-600 dark:text-brand-300" />
+                  </span>
+                  <p className="text-body flex-1 text-sm font-bold">{pengumuman.judul}</p>
+                </div>
+                <p className="text-muted mt-2.5 text-[13px] leading-relaxed">
+                  {pengumuman.isi}
+                </p>
+              </article>
+            ) : (
+              <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-4 py-8 text-center">
+                <Megaphone size={22} className="text-subtle mx-auto" />
+                <p className="text-muted mt-2 text-[13px]">
+                  Belum ada info dari manajemen
+                </p>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
