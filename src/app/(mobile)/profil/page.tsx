@@ -6,6 +6,7 @@ import { GantiAvatar } from "@/components/mobile/ganti-avatar";
 import type { JenisKelamin } from "@/components/mobile/avatar";
 import { getDb } from "@/db/client";
 import { departments, employees, positions } from "@/db/schema";
+import { cabangKaryawan } from "@/features/employees/service";
 import { wajibMasuk } from "@/lib/auth/session";
 import { tanggalPanjang } from "@/lib/waktu";
 
@@ -42,6 +43,10 @@ export default async function HalamanProfil() {
     .where(eq(employees.id, pengguna.employeeId))
     .limit(1);
 
+  // Di Profil seluruh nama cabang ditulis, bukan jumlahnya — di sinilah
+  // orang mencari kepastian ia terdaftar di cabang mana saja.
+  const cabang = await cabangKaryawan(pengguna.employeeId);
+
   const kelahiran = [
     detail?.tempatLahir,
     detail?.tanggalLahir ? tanggalPanjang(detail.tanggalLahir) : null,
@@ -70,7 +75,10 @@ export default async function HalamanProfil() {
   const kepegawaian = [
     { label: "Jabatan", nilai: detail?.jabatan ?? "—" },
     { label: "Departemen", nilai: detail?.departemen ?? "—" },
-    { label: "Lokasi kerja", nilai: pengguna.namaLokasi ?? "—" },
+    {
+      label: cabang.nama.length > 1 ? "Cabang" : "Lokasi kerja",
+      nilai: cabang.nama.join(", ") || "—",
+    },
     { label: "Shift", nilai: pengguna.namaShift ?? "Tanpa shift" },
     { label: "Status", nilai: detail?.tipeKaryawan ?? "—" },
     {

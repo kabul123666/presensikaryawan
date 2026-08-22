@@ -5,6 +5,7 @@ import { NavBawah } from "@/components/mobile/nav-bawah";
 import { SidebarDesktop } from "@/components/karyawan/sidebar-desktop";
 import { getDb } from "@/db/client";
 import { employees } from "@/db/schema";
+import { cabangKaryawan, labelCabang } from "@/features/employees/service";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
 import { PERAN_ADMIN, PERAN_PENYETUJU, wajibMasuk } from "@/lib/auth/session";
 
@@ -34,13 +35,14 @@ export default async function MobileLayout({ children }: { children: React.React
     .limit(1);
 
   const belumDibaca = await jumlahBelumDibaca(pengguna.userId);
+  const cabang = labelCabang(await cabangKaryawan(pengguna.employeeId));
 
   return (
     <div className="bg-app flex h-dvh overflow-hidden">
       <SidebarDesktop
         nama={pengguna.nama}
         jabatan={pengguna.namaJabatan}
-        lokasi={pengguna.namaLokasi}
+        lokasi={cabang}
         fotoUrl={detail?.fotoProfil ? `/api/berkas/${detail.fotoProfil}` : null}
         jenisKelamin={detail?.jenisKelamin as JenisKelamin}
         penyetuju={PERAN_PENYETUJU.includes(pengguna.role)}

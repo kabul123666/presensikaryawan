@@ -1,6 +1,18 @@
 import "server-only";
 
-import { and, asc, count, eq, ilike, inArray, ne, or, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  ne,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import {
@@ -206,4 +218,57 @@ export async function ringkasanKaryawan() {
     menunggu: Number(row?.menunggu ?? 0),
     nonaktif: Number(row?.nonaktif ?? 0),
   };
+}
+
+/**
+ * Cabang tempat seorang karyawan bertugas: penempatan utamanya ditambah
+ * penugasan lintas cabang.
+ *
+ * Antarmuka sebelumnya hanya menyebut penempatan utama, sehingga seorang
+ * manajer yang membawahi tiga cabang tampil seolah hanya milik satu — padahal
+ * mesin absensinya sudah lama mengizinkan ia absen di cabang mana pun
+ * (lihat `muatSemuaLokasi` di features/attendance/actions.ts).
+ */
+export async function cabangKaryawan(employeeId: string) {
+  const db = await getDb();
+
+  const [milik, [total]] = await Promise.all([
+    db
+      .select({ id: locations.id, nama: locations.nama })
+      .from(locations)
+      .leftJoin(
+        employeeLocations,
+        and(
+          eq(employeeLocations.locationId, locations.id),
+          eq(employeeLocations.employeeId, employeeId),
+        ),
+      )
+      .leftJoin(
+        employees,
+        and(eq(employees.id, employeeId), eq(employees.locationId, locations.id)),
+      )
+      .where(or(isNotNull(employeeLocations.employeeId), isNotNull(employees.id)))
+      .orderBy(asc(locations.nama)),
+    db.select({ jumlah: count() }).from(locations).where(eq(locations.aktif, true)),
+  ]);
+
+  const nama = milik.map((m) => m.nama);
+
+  return {
+    nama,
+    /** Benar bila karyawan ini mencakup seluruh cabang yang aktif. */
+    semuaCabang: nama.length > 1 && nama.length >= Number(total?.jumlah ?? 0),
+  };
+}
+
+/**
+ * Label cabang untuk kepala halaman.
+ *
+ * Menyebut tiga nama cabang di bawah nama orang membuat barisnya terpotong di
+ * ponsel, jadi yang ditampilkan jumlahnya — nama lengkapnya ada di Profil.
+ */
+export function labelCabang(cabang: { nama: string[]; semuaCabang: boolean }) {
+  if (cabang.nama.length === 0) return null;
+  if (cabang.nama.length === 1) return cabang.nama[0];
+  return cabang.semuaCabang ? "Seluruh cabang" : `${cabang.nama.length} cabang`;
 }

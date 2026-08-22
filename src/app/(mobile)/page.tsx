@@ -8,6 +8,7 @@ import { getDb } from "@/db/client";
 import { announcements, employees } from "@/db/schema";
 import { MenuUtama } from "@/components/mobile/menu-aplikasi";
 import { absensiAktif, shiftBerlaku } from "@/features/attendance/service";
+import { cabangKaryawan, labelCabang } from "@/features/employees/service";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
 import { bacaPengaturan } from "@/features/settings/service";
 import { wajibMasuk } from "@/lib/auth/session";
@@ -37,6 +38,7 @@ export default async function BerandaKaryawan() {
     .limit(1);
 
   const belumDibaca = await jumlahBelumDibaca(pengguna.userId);
+  const cabang = labelCabang(await cabangKaryawan(pengguna.employeeId));
 
   const [pengumuman] = await db
     .select()
@@ -75,7 +77,7 @@ export default async function BerandaKaryawan() {
             </h1>
             <p className="mt-0.5 truncate text-[13px] text-white/75">
               {pengguna.namaJabatan ?? "Karyawan"}
-              {pengguna.namaLokasi ? ` · ${pengguna.namaLokasi}` : ""}
+              {cabang ? ` · ${cabang}` : ""}
             </p>
           </div>
 
