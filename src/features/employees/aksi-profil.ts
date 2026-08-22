@@ -35,14 +35,29 @@ export async function aksiUnggahFotoProfil(formData: FormData): Promise<HasilPro
 
   const buf = Buffer.from(await berkas.arrayBuffer());
   if (!terlihatSepertiGambar(buf)) {
-    return { ok: false, pesan: "Berkas yang dipilih bukan gambar." };
+    return {
+      ok: false,
+      pesan:
+        "Pilih foto berformat JPG, PNG, atau WebP. Foto HEIC dari iPhone perlu diubah dulu lewat menu bagikan.",
+    };
   }
 
-  const jadi = await sharp(buf)
-    .rotate()
-    .resize(320, 320, { fit: "cover", position: "centre" })
-    .jpeg({ quality: 80, mozjpeg: true })
-    .toBuffer();
+  // Berkas yang lolos pemeriksaan awal pun masih bisa terpotong atau rusak.
+  // Tanpa penangkap ini, kegagalannya keluar sebagai galat server tanpa
+  // penjelasan, dan yang mengunggah tidak tahu harus berbuat apa.
+  let jadi: Buffer;
+  try {
+    jadi = await sharp(buf)
+      .rotate()
+      .resize(320, 320, { fit: "cover", position: "centre" })
+      .jpeg({ quality: 80, mozjpeg: true })
+      .toBuffer();
+  } catch {
+    return {
+      ok: false,
+      pesan: "Foto tidak bisa dibaca — berkasnya mungkin rusak. Coba potret ulang.",
+    };
+  }
 
   const kunci = `profil/${pengguna.employeeId}-${Date.now()}.jpg`;
   await storage().put(kunci, jadi, "image/jpeg");

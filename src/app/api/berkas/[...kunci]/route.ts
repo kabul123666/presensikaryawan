@@ -13,6 +13,23 @@ import { storage } from "@/lib/storage";
  * pada keduanya pemeriksaan hak akses dilakukan di sini. Driver R2 memakai
  * URL bertanda tangan sehingga tidak melewati route ini.
  */
+/** UUID pada awal nama berkas, dipakai kunci foto profil. */
+const AWALAN_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+/**
+ * Employee id pemilik sebuah berkas, atau null bila bentuk kuncinya asing.
+ *
+ * absensi/<tahun>/<bulan>/<employeeId>/<berkas>
+ * lampiran/<employeeId>/<berkas>
+ * profil/<employeeId>-<stempelWaktu>.jpg
+ */
+function pemilikBerkas(bagian: string[]): string | null {
+  if (bagian[0] === "absensi") return bagian[3] ?? null;
+  if (bagian[0] === "lampiran") return bagian[1] ?? null;
+  if (bagian[0] === "profil") return AWALAN_UUID.exec(bagian[1] ?? "")?.[0] ?? null;
+  return null;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ kunci: string[] }> },
@@ -31,9 +48,17 @@ export async function GET(
     return NextResponse.json({ pesan: "Jalur tidak sah" }, { status: 400 });
   }
 
-  // Kunci foto absensi berbentuk absensi/<tahun>/<bulan>/<employeeId>/<berkas>
+  /*
+   * Menentukan pemilik berkas dari bentuk kuncinya.
+   *
+   * Ketiganya berbeda bentuk, dan sebelumnya hanya foto absensi yang dikenali.
+   * Akibatnya foto profil dan lampiran selalu dianggap tak bertuan, sehingga
+   * karyawan biasa ditolak membuka fotonya sendiri — foto yang baru saja ia
+   * unggah tampil sebagai gambar rusak.
+   */
   const bagian = aman.split("/");
-  const pemilik = bagian[0] === "absensi" ? bagian[3] : null;
+  const pemilik = pemilikBerkas(bagian);
+
   if (!bolehKelolaSemua(pengguna.role) && pemilik !== pengguna.employeeId) {
     return NextResponse.json({ pesan: "Tidak berwenang" }, { status: 403 });
   }

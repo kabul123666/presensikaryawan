@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { and, eq, sql } from "drizzle-orm";
+import sharp from "sharp";
 import { z } from "zod";
 
 import { getDb } from "@/db/client";
@@ -41,7 +42,16 @@ function segarkan() {
   revalidatePath("/admin");
 }
 
-/** Menyimpan lampiran pengajuan (mis. surat dokter). */
+/**
+ * Menyimpan lampiran pengajuan (mis. surat dokter).
+ *
+ * Berkasnya di-encode ulang jadi JPEG, bukan disimpan apa adanya. Sebelumnya
+ * PNG dan WebP ikut diterima lalu ditulis mentah dengan label `image/jpeg` —
+ * dan karena aplikasi mengirim `X-Content-Type-Options: nosniff`, peramban
+ * menolak menebak jenis sebenarnya dan lampirannya tampil sebagai gambar
+ * rusak. Sekalian metadata bawaan kamera, termasuk koordinat tempat foto
+ * diambil, tidak ikut tersimpan.
+ */
 async function simpanLampiran(
   berkas: FormDataEntryValue | null,
   employeeId: string,
@@ -51,11 +61,26 @@ async function simpanLampiran(
 
   const buf = Buffer.from(await berkas.arrayBuffer());
   if (!terlihatSepertiGambar(buf)) {
-    throw new Error("Lampiran harus berupa gambar (foto surat dokter).");
+    throw new Error(
+      "Lampiran harus berupa foto JPG, PNG, atau WebP. Foto HEIC dari iPhone perlu diubah dulu lewat menu bagikan.",
+    );
+  }
+
+  let jadi: Buffer;
+  try {
+    jadi = await sharp(buf)
+      .rotate()
+      .resize(1280, 1600, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 78, mozjpeg: true })
+      .toBuffer();
+  } catch {
+    throw new Error(
+      "Foto lampiran tidak bisa dibaca. Coba potret ulang atau pilih berkas lain.",
+    );
   }
 
   const kunci = `lampiran/${employeeId}/${Date.now()}.jpg`;
-  await storage().put(kunci, buf, "image/jpeg");
+  await storage().put(kunci, jadi, "image/jpeg");
   return kunci;
 }
 
