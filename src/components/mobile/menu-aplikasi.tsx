@@ -14,14 +14,14 @@ import {
   IconNotifikasi,
   IconRiwayat,
   IconTindakan,
-  type Icon3DProps,
-} from "@/components/icons3d";
+  type IkonProps,
+} from "@/components/ikon";
 
 type Menu = {
   /** Kunci tetap; label boleh berubah tanpa membatalkan pilihan karyawan. */
   kunci: string;
   label: string;
-  Ikon: (p: Icon3DProps) => React.ReactElement;
+  Ikon: (p: IkonProps) => React.ReactElement;
   /** Kosong berarti fiturnya belum dibangun — ditandai dan tidak bisa dibuka. */
   href?: string;
   /** Hanya tampil bagi yang berwenang menyetujui. */

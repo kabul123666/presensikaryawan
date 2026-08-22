@@ -2,7 +2,7 @@ import Link from "next/link";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { FileText } from "lucide-react";
 
-import { IconFee } from "@/components/icons3d";
+import { IconFee } from "@/components/ikon";
 import { Badge } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { attendances, workLogItems } from "@/db/schema";

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 
-import { IconApproval, IconCuti, IconLembur, IconRiwayat } from "@/components/icons3d";
+import { IconApproval, IconCuti, IconLembur, IconRiwayat } from "@/components/ikon";
 import { FileText } from "lucide-react";
 
 import { BadgePengajuan } from "@/components/ui/status";
