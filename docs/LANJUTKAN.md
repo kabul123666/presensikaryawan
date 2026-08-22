@@ -43,6 +43,19 @@ lagi.
 3. **Vercel Hobby melarang pemakaian komersial.** Untuk dipakai operasional
    sungguhan, paketnya perlu dinaikkan ke Pro.
 
+## Belum sempat diperiksa langsung
+
+Tiga fitur admin di bawah ini lolos typecheck, lint, dan `next build`, tetapi
+**belum pernah dibuka di peramban** — sesi yang membangunnya tidak bisa masuk
+sebagai admin. Periksa sekali sebelum dipakai sungguhan:
+
+1. **Kunci periode** di Rekap Absensi — coba kunci satu periode lama, pastikan
+   angkanya membeku dan koreksi absen untuk tanggal itu ditolak.
+2. **Tinjau Anomali** (`/admin/anomali`) — penandaan massal dan tombol
+   mengembalikan baris ke antrean.
+3. **Unduh Excel** di Rekap Absensi — sekarang dua lembar; pastikan lembar
+   "Rincian Tindakan" terisi dan kolom menit/jam bisa dijumlah.
+
 ## Jebakan yang sudah diketahui
 
 - **`.env.local` menunjuk database produksi.** `npm run db:reset` di komputer
@@ -60,6 +73,9 @@ lagi.
 - **Jangan memeriksa `navigator` saat render.** Server tidak punya objek itu,
   jadi kesimpulannya berbeda dari peramban dan hidrasi gagal diam-diam. Pakai
   `useSyncExternalStore` dengan snapshot server, seperti di `gunakan-lokasi.ts`.
+- **Periode rekap belum tentu bulan kalender.** Ambil rentangnya lewat
+  `rentangPeriode()`, jangan memanggil `batasBulan()` sendiri — layar, halaman
+  rincian, dan berkas unduhan harus memotong periode di tanggal yang sama.
 - **Payload pengajuan berbeda kunci per jenis.** Baca lewat
   `src/features/requests/ringkasan.ts`, jangan menebak sendiri — layar admin
   dan layar karyawan pernah berbeda tampilan gara-gara itu.
@@ -74,7 +90,9 @@ karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · hala
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
 dan formulir pengajuan per jenis · tampilan desktop untuk karyawan (sidebar +
 dua kolom) · layar absen bergaya peta penuh di menu Presensi · rekap kehadiran
-berbentuk kartu per hari · pemilih warna aplikasi.
+berbentuk kartu per hari · pemilih warna aplikasi · periode rekap mengikuti
+siklus gaji · kunci periode · antrean tinjau anomali · ekspor rekap berikut
+rincian fee.
 
 Tampilan karyawan punya dua bentuk dari satu berkas halaman. Di bawah lebar
 `lg` (1024px): satu kolom selebar 430px dengan bilah bawah, seperti sebelumnya.

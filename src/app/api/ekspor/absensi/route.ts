@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
-import { rekapPeriodeAtauKunci } from "@/features/reports/kunci";
-import { rentangPeriode, totalRekap } from "@/features/reports/service";
+import { kunciPeriode, rekapPeriodeAtauKunci } from "@/features/reports/kunci";
+import {
+  rentangPeriode,
+  rincianFeePeriode,
+  totalRekap,
+} from "@/features/reports/service";
 import { bacaPengaturan } from "@/features/settings/service";
 import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
-import { formatDurasi } from "@/lib/utils";
-import { namaBulan, tanggalWIB } from "@/lib/waktu";
+import { namaBulan, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
 /**
  * Mengunduh rekap absensi sebagai berkas Excel.
@@ -44,13 +47,17 @@ export async function GET(request: Request) {
   const rentang = await rentangPeriode(tahun, bulan);
   const { baris } = await rekapPeriodeAtauKunci({ ...rentang, departmentId });
   const total = totalRekap(baris);
+  const [rincianFee, kunci] = await Promise.all([
+    rincianFeePeriode({ ...rentang, departmentId }),
+    kunciPeriode(rentang.mulai, rentang.akhir),
+  ]);
 
   const ExcelJS = await import("exceljs");
   const wb = new ExcelJS.Workbook();
   wb.creator = profil.nama || "Presensi Karyawan";
   wb.created = new Date();
 
-  const ws = wb.addWorksheet(`Rekap ${namaBulan(tahun, bulan)}`, {
+  const ws = wb.addWorksheet("Rekap", {
     views: [{ state: "frozen", ySplit: 4 }],
   });
 
@@ -63,7 +70,9 @@ export async function GET(request: Request) {
   ws.getCell("A1").alignment = { horizontal: "center" };
 
   ws.mergeCells("A2:N2");
-  ws.getCell("A2").value = `Periode ${namaBulan(tahun, bulan)}`;
+  ws.getCell("A2").value =
+    `Periode ${namaBulan(tahun, bulan)} · ${tanggalPendek(rentang.mulai)} – ${tanggalPendek(rentang.akhir)}` +
+    (kunci ? " · TERKUNCI" : "");
   ws.getCell("A2").alignment = { horizontal: "center" };
 
   const judul = [
@@ -75,12 +84,12 @@ export async function GET(request: Request) {
     "Hadir",
     "Tepat Waktu",
     "Terlambat",
-    "Total Telat",
+    "Total Telat (menit)",
     "Lembur",
-    "Total Lembur",
+    "Total Lembur (menit)",
     "Cuti",
     "Alpa",
-    "Jam Kerja",
+    "Jam Kerja (jam)",
     "Fee Tindakan",
   ];
 
@@ -107,12 +116,12 @@ export async function GET(request: Request) {
       b.hadir,
       b.tepatWaktu,
       b.terlambat,
-      formatDurasi(b.menitTerlambat),
+      b.menitTerlambat,
       b.lembur,
-      formatDurasi(b.menitLembur),
+      b.menitLembur,
       b.cuti,
       b.alpa,
-      formatDurasi(b.menitKerja),
+      Number((b.menitKerja / 60).toFixed(2)),
       b.totalFee,
     ]);
   });
@@ -127,12 +136,12 @@ export async function GET(request: Request) {
     total.hadir,
     "",
     total.terlambat,
-    formatDurasi(total.menitTerlambat),
+    total.menitTerlambat,
     "",
-    formatDurasi(total.menitLembur),
+    total.menitLembur,
     total.cuti,
     total.alpa,
-    formatDurasi(total.menitKerja),
+    Number((total.menitKerja / 60).toFixed(2)),
     total.totalFee,
   ]);
   barisTotal.font = { bold: true };
@@ -142,6 +151,7 @@ export async function GET(request: Request) {
 
   // Kolom fee ditulis sebagai angka dengan format rupiah agar bisa dijumlah
   // ulang di Excel tanpa perlu membersihkan teks.
+  ws.getColumn(14).numFmt = "0.00";
   ws.getColumn(15).numFmt = '"Rp"#,##0';
 
   const lebar = [5, 12, 26, 20, 18, 8, 12, 10, 12, 9, 13, 7, 7, 12, 16];
@@ -151,12 +161,66 @@ export async function GET(request: Request) {
 
   ws.addRow([]);
   const catatan = ws.addRow([
-    `Diunduh ${tanggalWIB()}. Angka mengikuti data absensi pada saat pengunduhan.`,
+    kunci
+      ? `Diunduh ${tanggalWIB()}. Periode ini sudah dikunci, sehingga angkanya tidak akan berubah lagi.`
+      : `Diunduh ${tanggalWIB()}. Periode ini belum dikunci — angkanya masih bisa berubah bila ada koreksi absen yang disetujui.`,
   ]);
   catatan.font = { italic: true, size: 9, color: { argb: "FF6D7F7B" } };
 
+  /*
+   * Lembar kedua: rincian tiap tindakan ber-fee.
+   *
+   * Rekap hanya memuat satu jumlah fee per orang. Tanpa rinciannya, bagian
+   * keuangan tidak punya cara memeriksa dari mana jumlah itu datang selain
+   * membuka layar satu per satu — dan itulah pekerjaan manual yang berkas ini
+   * seharusnya menghapus.
+   */
+  const wsFee = wb.addWorksheet("Rincian Tindakan", {
+    views: [{ state: "frozen", ySplit: 1 }],
+  });
+
+  wsFee.getRow(1).values = [
+    "Tanggal",
+    "NIK",
+    "Nama",
+    "Tindakan",
+    "Kode Pasien",
+    "Jumlah",
+    "Fee Satuan",
+    "Total",
+    "Status",
+  ];
+  wsFee.getRow(1).eachCell((sel) => {
+    sel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0B8065" } };
+    sel.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  });
+
+  for (const r of rincianFee) {
+    wsFee.addRow([
+      r.tanggal,
+      r.nik ?? "-",
+      r.nama,
+      r.tindakan,
+      r.kodePasien ?? "-",
+      r.jumlah,
+      r.fee,
+      r.fee * r.jumlah,
+      r.status === "VERIFIED" ? "Terverifikasi" : "Menunggu",
+    ]);
+  }
+
+  wsFee.getColumn(7).numFmt = '"Rp"#,##0';
+  wsFee.getColumn(8).numFmt = '"Rp"#,##0';
+  [12, 12, 26, 30, 14, 8, 14, 14, 14].forEach((w, i) => {
+    wsFee.getColumn(i + 1).width = w;
+  });
+
+  if (rincianFee.length === 0) {
+    wsFee.addRow(["Tidak ada tindakan ber-fee pada periode ini."]);
+  }
+
   const buffer = await wb.xlsx.writeBuffer();
-  const namaBerkas = `Rekap-Absensi-${tahun}-${String(bulan).padStart(2, "0")}.xlsx`;
+  const namaBerkas = `Rekap-Absensi-Fee-${tahun}-${String(bulan).padStart(2, "0")}.xlsx`;
 
   return new NextResponse(buffer as ArrayBuffer, {
     headers: {

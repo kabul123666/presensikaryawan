@@ -246,6 +246,38 @@ export async function detailHarian(filter: FilterRekap & { employeeId: string })
     .orderBy(desc(attendances.tanggal));
 }
 
+/**
+ * Rincian tindakan ber-fee sepanjang periode.
+ *
+ * Angka fee di rekap hanya satu jumlah per orang; tanpa rinciannya, bagian
+ * keuangan tidak punya cara memeriksa dari mana jumlah itu datang selain
+ * membuka layar satu per satu. Nominalnya diambil dari `feeSnapshot` — tarif
+ * yang berlaku saat tindakan dicatat — bukan dari tarif master hari ini.
+ */
+export async function rincianFeePeriode(filter: FilterRekap) {
+  const db = await getDb();
+  const { syarat } = syaratPeriode(filter);
+
+  return db
+    .select({
+      tanggal: attendances.tanggal,
+      employeeId: employees.id,
+      nama: employees.nama,
+      nik: users.nik,
+      tindakan: workLogItems.namaTindakan,
+      kodePasien: workLogItems.kodePasien,
+      jumlah: workLogItems.jumlah,
+      fee: workLogItems.feeSnapshot,
+      status: workLogItems.status,
+    })
+    .from(workLogItems)
+    .innerJoin(attendances, eq(attendances.id, workLogItems.attendanceId))
+    .innerJoin(employees, eq(employees.id, attendances.employeeId))
+    .innerJoin(users, eq(users.id, employees.userId))
+    .where(and(...syarat))
+    .orderBy(asc(employees.nama), asc(attendances.tanggal));
+}
+
 /** Total keseluruhan untuk baris ringkasan di bawah tabel. */
 export function totalRekap(baris: BarisRekap[]) {
   return baris.reduce(
