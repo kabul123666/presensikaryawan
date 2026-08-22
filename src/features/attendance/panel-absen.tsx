@@ -17,14 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Label, Select, Textarea } from "@/components/ui/field";
 import { formatRupiah } from "@/lib/utils";
 import { aksiClockIn, aksiClockOut, type HasilAbsen } from "./actions";
+import { jarakMeter, useLokasi } from "./gunakan-lokasi";
 import { PetaArea } from "./peta-area";
 
 export type Tindakan = { id: string; nama: string; kategori: string; fee: number };
 
 type Mode = "masuk" | "pulang";
 type Tahap = "izin" | "kamera" | "form" | "kirim" | "selesai";
-
-type Posisi = { lat: number; lng: number; akurasi: number };
 
 type Props = {
   mode: Mode;
@@ -64,17 +63,6 @@ function sidikPerangkat() {
   return id;
 }
 
-/** Jarak Haversine — sama dengan perhitungan server, hanya untuk pratinjau. */
-function jarakMeter(a: Posisi, b: { lat: number; lng: number }) {
-  const rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad;
-  const dLng = (b.lng - a.lng) * rad;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
-  return Math.round(2 * 6_371_000 * Math.asin(Math.sqrt(h)));
-}
-
 export function PanelAbsen({
   mode,
   lokasi,
@@ -87,9 +75,10 @@ export function PanelAbsen({
   const streamRef = useRef<MediaStream | null>(null);
 
   const [tahap, setTahap] = useState<Tahap>("izin");
-  const [posisi, setPosisi] = useState<Posisi | null>(null);
-  const [galatLokasi, setGalatLokasi] = useState<string | null>(null);
   const [galatKamera, setGalatKamera] = useState<string | null>(null);
+
+  // Pembacaan posisi ditangani penolong bersama, sama dengan layar absen.
+  const { posisi, pesan: pesanLokasi, perbarui: ambilLokasi } = useLokasi();
   const [foto, setFoto] = useState<Blob | null>(null);
   const [pratinjau, setPratinjau] = useState<string | null>(null);
   const [alasan, setAlasan] = useState("");
@@ -100,64 +89,6 @@ export function PanelAbsen({
   const jarak = posisi && lokasi ? jarakMeter(posisi, lokasi) : null;
   const diLuarArea =
     jarak !== null && lokasi ? jarak - (posisi?.akurasi ?? 0) > lokasi.radiusM : false;
-
-  /* ------------------------------------------------------------- Lokasi */
-  const [pantauan, setPantauan] = useState(0);
-  const [didukung] = useState(
-    () => typeof navigator !== "undefined" && "geolocation" in navigator,
-  );
-
-  const terimaPosisi = useCallback((pos: GeolocationPosition) => {
-    setGalatLokasi(null);
-    setPosisi({
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      akurasi: pos.coords.accuracy,
-    });
-  }, []);
-
-  const tolakPosisi = useCallback((err: GeolocationPositionError) => {
-    setGalatLokasi(
-      err.code === err.PERMISSION_DENIED
-        ? "Izin lokasi ditolak. Aktifkan lewat pengaturan browser lalu coba lagi."
-        : "Lokasi belum terbaca. Pastikan GPS menyala dan Anda tidak di ruang tertutup.",
-    );
-  }, []);
-
-  const ambilLokasi = useCallback(() => {
-    if (!didukung) return;
-    setPosisi(null);
-    setGalatLokasi(null);
-    setPantauan((n) => n + 1);
-  }, [didukung]);
-
-  /**
-   * Lokasi dipantau terus, bukan dibaca sekali.
-   *
-   * Pembacaan pertama sebuah ponsel hampir selalu berasal dari jaringan —
-   * menara seluler atau titik Wi-Fi — dengan ketelitian ratusan meter, dan GPS
-   * baru mengunci beberapa detik kemudian. Membaca sekali membuat aplikasi
-   * terjebak pada tebakan kasar itu: orang yang benar-benar berdiri di depan
-   * klinik tetap dianggap di luar area, dan menekan coba lagi pun sering
-   * mengembalikan angka yang sama.
-   *
-   * Dengan watchPosition, setiap perbaikan dari perangkat langsung dipakai,
-   * sehingga titiknya menajam sendiri sambil orangnya menunggu.
-   */
-  useEffect(() => {
-    if (!didukung) return;
-
-    const id = navigator.geolocation.watchPosition(terimaPosisi, tolakPosisi, {
-      enableHighAccuracy: true,
-      timeout: 20_000,
-      maximumAge: 0,
-    });
-    return () => navigator.geolocation.clearWatch(id);
-  }, [didukung, terimaPosisi, tolakPosisi, pantauan]);
-
-  const pesanLokasi = didukung
-    ? galatLokasi
-    : "Perangkat ini tidak mendukung layanan lokasi.";
 
   /* ------------------------------------------------------------- Kamera */
   const hidupkanKamera = useCallback(async () => {

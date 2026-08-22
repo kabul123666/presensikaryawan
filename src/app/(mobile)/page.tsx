@@ -5,7 +5,7 @@ import { Bell, Megaphone } from "lucide-react";
 import { Avatar, type JenisKelamin } from "@/components/mobile/avatar";
 import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
-import { announcements, employees, locations, procedureCatalog } from "@/db/schema";
+import { announcements, employees } from "@/db/schema";
 import { MenuUtama } from "@/components/mobile/menu-aplikasi";
 import { KartuAbsen } from "@/features/attendance/kartu-absen";
 import { absensiAktif, shiftBerlaku } from "@/features/attendance/service";
@@ -38,26 +38,6 @@ export default async function BerandaKaryawan() {
     .where(eq(employees.id, pengguna.employeeId))
     .limit(1);
 
-  const [lokasi] = pengguna.locationId
-    ? await db
-        .select()
-        .from(locations)
-        .where(eq(locations.id, pengguna.locationId))
-        .limit(1)
-    : [];
-
-  const daftarTindakan = pengguna.isiFormTindakan
-    ? await db
-        .select({
-          id: procedureCatalog.id,
-          nama: procedureCatalog.nama,
-          kategori: procedureCatalog.kategori,
-          fee: procedureCatalog.feeDefault,
-        })
-        .from(procedureCatalog)
-        .where(eq(procedureCatalog.aktif, true))
-    : [];
-
   const belumDibaca = await jumlahBelumDibaca(pengguna.userId);
 
   const [pengumuman] = await db
@@ -75,8 +55,19 @@ export default async function BerandaKaryawan() {
   return (
     <div className="pb-6">
       {/* ------------------------------------------------------- Kepala */}
-      <header className="bg-brand-700 pt-safe px-5 pb-20 lg:flex lg:items-center lg:gap-8 lg:rounded-[var(--radius-sheet)] lg:px-7 lg:pb-7">
-        <div className="flex items-start justify-between pt-4 lg:min-w-0 lg:flex-1 lg:pt-2">
+      <header className="bg-brand-700 pt-safe relative overflow-hidden px-5 pb-16 lg:flex lg:items-center lg:gap-8 lg:rounded-[var(--radius-sheet)] lg:px-7 lg:pb-7">
+        {/* Ornamen: dua lingkaran cahaya yang sangat samar supaya bidang hijau
+            selebar ini tidak terbaca sebagai blok datar. Ditaruh di kepala,
+            bukan di atas kartu, agar tidak pernah jatuh di belakang angka. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -right-20 size-64 rounded-full bg-white/[0.07]"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-28 -left-24 size-60 rounded-full bg-white/[0.05]"
+        />
+        <div className="relative flex items-start justify-between pt-4 lg:min-w-0 lg:flex-1 lg:pt-2">
           <div className="min-w-0">
             {profil.nama && (
               <span className="inline-block rounded-md bg-white/15 px-2 py-1 text-[11px] font-bold text-white">
@@ -121,7 +112,7 @@ export default async function BerandaKaryawan() {
         </div>
 
         {/* Ringkasan hari ini — tanggal, jam shift, dan jam yang tercatat */}
-        <div className="bg-surface mt-5 rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-raised)] lg:mt-0 lg:w-[440px] lg:shrink-0 lg:p-5">
+        <div className="bg-surface relative mt-5 rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-raised)] lg:mt-0 lg:w-[440px] lg:shrink-0 lg:p-5">
           <div className="flex items-center justify-between">
             <p className="text-body text-[13px] font-bold">{tanggalPanjang(hariIni)}</p>
             <p className="tnum text-brand-700 dark:text-brand-300 text-[13px] font-bold">
@@ -162,13 +153,20 @@ export default async function BerandaKaryawan() {
       </header>
 
       {/* Dua kolom di komputer: yang dikerjakan tiap hari di kiri, kabar di kanan */}
-      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
+      {/* `relative` wajib: sejak kepala jadi elemen berposisi karena ornamennya,
+          isi yang tidak berposisi akan tergambar di bawahnya dan kartu absen
+          yang sengaja menimpa kepala malah tertutup. */}
+      <div className="relative lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
         <div className="lg:space-y-5">
           {/* -------------------------------------------------- Kartu absen */}
-          <div className="-mt-14 lg:mt-0">
+          <div className="-mt-12 lg:mt-0">
             <KartuAbsen
               sudahMasuk={sudahMasuk}
               sudahPulang={sudahPulang}
+              jamMasuk={absenHariIni?.clockInAt ? jamWIB(absenHariIni.clockInAt) : null}
+              jamPulang={
+                absenHariIni?.clockOutAt ? jamWIB(absenHariIni.clockOutAt) : null
+              }
               jadwal={
                 jadwal.shift
                   ? {
@@ -178,19 +176,7 @@ export default async function BerandaKaryawan() {
                     }
                   : null
               }
-              lokasi={
-                lokasi
-                  ? {
-                      nama: lokasi.nama,
-                      lat: lokasi.lat,
-                      lng: lokasi.lng,
-                      radiusM: lokasi.radiusM,
-                    }
-                  : null
-              }
               bolehTanpaShift={kebijakan.izinkanAbsenTanpaShift}
-              isiFormTindakan={pengguna.isiFormTindakan}
-              daftarTindakan={daftarTindakan}
             />
           </div>
 

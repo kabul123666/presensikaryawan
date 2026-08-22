@@ -23,6 +23,7 @@ export function PetaLeaflet({
   radiusM,
   akurasiM,
   diLuarArea,
+  kelasTinggi = "h-52",
 }: {
   /** Null selagi GPS belum terbaca — areanya tetap digambar. */
   posisi: { lat: number; lng: number } | null;
@@ -30,6 +31,8 @@ export function PetaLeaflet({
   radiusM: number;
   akurasiM: number;
   diLuarArea: boolean;
+  /** Tinggi wadah peta; layar absen memakainya lebih tinggi. */
+  kelasTinggi?: string;
 }) {
   const wadahRef = useRef<HTMLDivElement>(null);
   const petaRef = useRef<L.Map | null>(null);
@@ -122,5 +125,11 @@ export function PetaLeaflet({
     peta.fitBounds(batas.pad(0.08), { maxZoom: 18, animate: false });
   }, [posisi, pusat.lat, pusat.lng, radiusM, akurasiM, diLuarArea]);
 
-  return <div ref={wadahRef} className="h-52 w-full" aria-label="Peta area absen" />;
+  return (
+    <div
+      ref={wadahRef}
+      className={`w-full ${kelasTinggi}`}
+      aria-label="Peta area absen"
+    />
+  );
 }
