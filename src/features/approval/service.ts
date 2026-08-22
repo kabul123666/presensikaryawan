@@ -157,6 +157,42 @@ export async function bolehMemutuskan(
   );
 }
 
+/**
+ * Berapa langkah persetujuan yang harus dilalui sebuah pengajuan baru.
+ *
+ * Aturan berjenjang selama ini hanya tersimpan, tidak pernah terpakai:
+ * `requests.totalStep` memakai nilai bawaan satu dan tak ada yang membacanya
+ * dari aturan, sehingga pengajuan selalu selesai pada persetujuan pertama
+ * meski admin sudah menyusun dua langkah.
+ *
+ * Jumlah langkahnya dibekukan ke dalam pengajuan saat dibuat, bukan dibaca
+ * ulang tiap kali diputuskan. Dengan begitu mengubah aturan hari ini tidak
+ * mengacaukan pengajuan yang sudah berjalan setengah jalan.
+ */
+export async function langkahPersetujuan(
+  tipe: RequestType,
+  karyawan: { departmentId: string | null; locationId: string | null },
+): Promise<number> {
+  const db = await getDb();
+
+  const aturan = await db
+    .select()
+    .from(approvalRules)
+    .where(and(eq(approvalRules.tipePengajuan, tipe), eq(approvalRules.aktif, true)));
+
+  // Aturan paling spesifik menang — urutannya sama persis dengan yang dipakai
+  // `bolehMemutuskan`, supaya yang menetapkan langkah dan yang memeriksa
+  // wewenang tidak pernah memilih aturan yang berbeda.
+  const cocok =
+    aturan.find(
+      (a) =>
+        (a.scope === "DEPARTMENT" && a.scopeId === karyawan.departmentId) ||
+        (a.scope === "LOCATION" && a.scopeId === karyawan.locationId),
+    ) ?? aturan.find((a) => a.scope === "ALL");
+
+  return Math.max(1, cocok?.totalStep ?? 1);
+}
+
 /** Menyaring daftar pengajuan menjadi hanya yang boleh diputuskan pengguna. */
 export async function saringYangBolehDiputuskan(
   pengguna: { userId: string; role: Role },

@@ -19,6 +19,7 @@ import {
 } from "@/db/schema";
 import { wajibMasuk, type PenggunaSesi } from "@/lib/auth/session";
 import { MAKS_UKURAN_FOTO, olahFotoAbsensi, terlihatSepertiGambar } from "@/lib/foto";
+import { langkahPersetujuan } from "@/features/approval/service";
 import { alamatDariKoordinat, evaluasiGeofence, type HasilGeofence } from "@/lib/geo";
 import { kunciFotoAbsensi, storage } from "@/lib/storage";
 import { tanggalWIB } from "@/lib/waktu";
@@ -508,6 +509,10 @@ export async function aksiClockOut(
       employeeId: pengguna.employeeId,
       tipe: "OVERTIME",
       status: "PENDING",
+      totalStep: await langkahPersetujuan("OVERTIME", {
+        departmentId: pengguna.departmentId,
+        locationId: pengguna.locationId,
+      }),
       alasan: catatanKerja.slice(0, 300),
       payload: {
         attendanceId: aktif.id,

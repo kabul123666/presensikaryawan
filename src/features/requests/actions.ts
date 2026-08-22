@@ -10,6 +10,7 @@ import { getDb } from "@/db/client";
 import { attendances, auditLogs, leaveBalances, leaveTypes, requests } from "@/db/schema";
 import { wajibMasuk, type PenggunaSesi } from "@/lib/auth/session";
 import { MAKS_UKURAN_FOTO, terlihatSepertiGambar } from "@/lib/foto";
+import { langkahPersetujuan } from "@/features/approval/service";
 import { tanggalTerkunci } from "@/features/reports/kunci";
 import { bacaPengaturan } from "@/features/settings/service";
 import { storage } from "@/lib/storage";
@@ -174,6 +175,10 @@ export async function aksiAjukanCuti(
       employeeId: pengguna.employeeId,
       tipe: jenis.butuhLampiran ? "PERMIT" : "LEAVE",
       status: "PENDING",
+      totalStep: await langkahPersetujuan(jenis.butuhLampiran ? "PERMIT" : "LEAVE", {
+        departmentId: pengguna.departmentId,
+        locationId: pengguna.locationId,
+      }),
       alasan: d.alasan,
       lampiran,
       payload: {
@@ -266,6 +271,10 @@ export async function aksiAjukanLembur(
       employeeId: pengguna.employeeId,
       tipe: "OVERTIME",
       status: "PENDING",
+      totalStep: await langkahPersetujuan("OVERTIME", {
+        departmentId: pengguna.departmentId,
+        locationId: pengguna.locationId,
+      }),
       alasan: d.alasan,
       payload: {
         attendanceId: absen?.id ?? null,
@@ -353,6 +362,10 @@ export async function aksiAjukanKoreksi(
       employeeId: pengguna.employeeId,
       tipe: "BACKDATE",
       status: "PENDING",
+      totalStep: await langkahPersetujuan("BACKDATE", {
+        departmentId: pengguna.departmentId,
+        locationId: pengguna.locationId,
+      }),
       alasan: d.alasan,
       payload: {
         attendanceId: absen?.id ?? null,

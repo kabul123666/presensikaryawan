@@ -38,9 +38,16 @@ lagi.
 1. **Belum ada jenis cuti** di database, sehingga pengajuan cuti dan izin belum
    bisa dibuat siapa pun. Diisi pemilik lewat Pengaturan → Cuti; jangan diisi
    sendiri karena kuota cuti adalah keputusan kebijakan.
-2. **Belum ada aturan persetujuan.** Pengajuan tetap bisa disetujui admin lewat
-   jalur cadangan, tetapi persetujuan berjenjang belum berlaku.
-3. **Vercel Hobby melarang pemakaian komersial.** Untuk dipakai operasional
+2. **Shift belum ditetapkan** untuk delapan dari sembilan karyawan, dan hanya
+   satu shift yang terdefinisi. Akibatnya kehadiran tercatat tetapi tidak
+   pernah dinilai terlambat — semua otomatis berstatus Tepat Waktu. Jam shift
+   adalah keputusan kebijakan, jadi harus diisi pemilik.
+3. **Katalog tindakan masih kosong** padahal tujuh karyawan berjabatan yang
+   mencatat fee. Saat clock out mereka disodori daftar kosong dan feenya selalu
+   nol. Tarif adalah keputusan kebijakan.
+4. **Radius geofence 500 m di ketiga cabang** — cukup longgar untuk absen dari
+   seberang jalan. Perlu ditinjau pemilik.
+5. **Vercel Hobby melarang pemakaian komersial.** Untuk dipakai operasional
    sungguhan, paketnya perlu dinaikkan ke Pro.
 
 ## Belum sempat diperiksa langsung
@@ -73,6 +80,11 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
 - **Jangan memeriksa `navigator` saat render.** Server tidak punya objek itu,
   jadi kesimpulannya berbeda dari peramban dan hidrasi gagal diam-diam. Pakai
   `useSyncExternalStore` dengan snapshot server, seperti di `gunakan-lokasi.ts`.
+- **`requests.totalStep` harus diisi saat pengajuan dibuat**, lewat
+  `langkahPersetujuan()`. Nilai bawaannya satu, dan sebelum ini tidak ada yang
+  membacanya dari aturan — akibatnya aturan berjenjang tersimpan rapi tapi
+  tidak pernah berlaku. Setiap tempat baru yang membuat baris `requests` wajib
+  memanggilnya.
 - **Periode rekap belum tentu bulan kalender.** Ambil rentangnya lewat
   `rentangPeriode()`, jangan memanggil `batasBulan()` sendiri — layar, halaman
   rincian, dan berkas unduhan harus memotong periode di tanggal yang sama.
@@ -88,6 +100,8 @@ Manager ke departemennya · penugasan lintas cabang · penggantian password oleh
 admin · beranda bergaya aplikasi kepegawaian · menu pilihan yang bisa diatur
 karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · halaman
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
+persetujuan dua langkah (Kepala Unit lalu Admin/HRD) untuk cuti, izin, lembur,
+dan koreksi absen · larangan menyetujui pengajuan sendiri ·
 dan formulir pengajuan per jenis · tampilan desktop untuk karyawan (sidebar +
 dua kolom) · layar absen bergaya peta penuh di menu Presensi · rekap kehadiran
 berbentuk kartu per hari · pemilih warna aplikasi · periode rekap mengikuti
