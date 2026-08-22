@@ -7,7 +7,6 @@ import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { announcements, employees } from "@/db/schema";
 import { MenuUtama } from "@/components/mobile/menu-aplikasi";
-import { KartuAbsen } from "@/features/attendance/kartu-absen";
 import { absensiAktif, shiftBerlaku } from "@/features/attendance/service";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
 import { bacaPengaturan } from "@/features/settings/service";
@@ -21,10 +20,9 @@ export default async function BerandaKaryawan() {
 
   const hariIni = tanggalWIB();
 
-  const [absen, jadwal, kebijakan, profil] = await Promise.all([
+  const [absen, jadwal, profil] = await Promise.all([
     absensiAktif(pengguna.employeeId),
     shiftBerlaku(pengguna.employeeId, hariIni),
-    bacaPengaturan("kebijakan_absensi"),
     bacaPengaturan("profil_perusahaan"),
   ]);
 
@@ -49,13 +47,11 @@ export default async function BerandaKaryawan() {
 
   const absenHariIni =
     absen?.tanggal === hariIni ? absen : absen?.clockOutAt ? null : absen;
-  const sudahMasuk = Boolean(absenHariIni?.clockInAt);
-  const sudahPulang = Boolean(absenHariIni?.clockOutAt);
 
   return (
     <div className="pb-6">
       {/* ------------------------------------------------------- Kepala */}
-      <header className="bg-brand-700 pt-safe relative overflow-hidden px-5 pb-16 lg:flex lg:items-center lg:gap-8 lg:rounded-[var(--radius-sheet)] lg:px-7 lg:pb-7">
+      <header className="bg-brand-700 pt-safe relative overflow-hidden px-5 pb-5 lg:flex lg:items-center lg:gap-8 lg:rounded-[var(--radius-sheet)] lg:px-7 lg:pb-7">
         {/* Ornamen: dua lingkaran cahaya yang sangat samar supaya bidang hijau
             selebar ini tidak terbaca sebagai blok datar. Ditaruh di kepala,
             bukan di atas kartu, agar tidak pernah jatuh di belakang angka. */}
@@ -153,33 +149,8 @@ export default async function BerandaKaryawan() {
       </header>
 
       {/* Dua kolom di komputer: yang dikerjakan tiap hari di kiri, kabar di kanan */}
-      {/* `relative` wajib: sejak kepala jadi elemen berposisi karena ornamennya,
-          isi yang tidak berposisi akan tergambar di bawahnya dan kartu absen
-          yang sengaja menimpa kepala malah tertutup. */}
-      <div className="relative lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
+      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
         <div className="lg:space-y-5">
-          {/* -------------------------------------------------- Kartu absen */}
-          <div className="-mt-12 lg:mt-0">
-            <KartuAbsen
-              sudahMasuk={sudahMasuk}
-              sudahPulang={sudahPulang}
-              jamMasuk={absenHariIni?.clockInAt ? jamWIB(absenHariIni.clockInAt) : null}
-              jamPulang={
-                absenHariIni?.clockOutAt ? jamWIB(absenHariIni.clockOutAt) : null
-              }
-              jadwal={
-                jadwal.shift
-                  ? {
-                      nama: jadwal.shift.nama,
-                      jamMasuk: jadwal.shift.jamMasuk,
-                      jamPulang: jadwal.shift.jamPulang,
-                    }
-                  : null
-              }
-              bolehTanpaShift={kebijakan.izinkanAbsenTanpaShift}
-            />
-          </div>
-
           {/* Status hari ini */}
           {absenHariIni && (
             <div className="mt-4 px-5 lg:mt-0 lg:px-0">

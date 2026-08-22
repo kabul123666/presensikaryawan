@@ -44,7 +44,7 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
     menu: [
       {
         kunci: "riwayat",
-        label: "Riwayat",
+        label: "Presensi",
         href: "/riwayat",
         Ikon: IconRiwayat,
         utama: true,
