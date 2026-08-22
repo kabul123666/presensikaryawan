@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq, isNotNull } from "drizzle-orm";
 import { Bell, Megaphone } from "lucide-react";
 
+import { Avatar, type JenisKelamin } from "@/components/mobile/avatar";
 import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { announcements, employees, locations, procedureCatalog } from "@/db/schema";
@@ -28,7 +29,11 @@ export default async function BerandaKaryawan() {
   ]);
 
   const [karyawan] = await db
-    .select({ menuBeranda: employees.menuBeranda })
+    .select({
+      menuBeranda: employees.menuBeranda,
+      fotoProfil: employees.fotoProfil,
+      jenisKelamin: employees.jenisKelamin,
+    })
     .from(employees)
     .where(eq(employees.id, pengguna.employeeId))
     .limit(1);
@@ -102,12 +107,15 @@ export default async function BerandaKaryawan() {
                 </span>
               )}
             </Link>
-            <Link
-              href="/profil"
-              className="grid size-11 place-items-center rounded-full bg-white/15 text-base font-bold text-white"
-              aria-label="Profil"
-            >
-              {pengguna.nama.slice(0, 1).toUpperCase()}
+            <Link href="/profil" className="shrink-0" aria-label="Profil">
+              <Avatar
+                nama={pengguna.nama}
+                fotoUrl={
+                  karyawan?.fotoProfil ? `/api/berkas/${karyawan.fotoProfil}` : null
+                }
+                jenisKelamin={karyawan?.jenisKelamin as JenisKelamin}
+                className="size-11 bg-white/15 text-base text-white ring-1 ring-white/25"
+              />
             </Link>
           </div>
         </div>

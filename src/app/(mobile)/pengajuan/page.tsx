@@ -6,27 +6,13 @@ import { FileText } from "lucide-react";
 
 import { BadgePengajuan } from "@/components/ui/status";
 import { getDb } from "@/db/client";
-import {
-  leaveBalances,
-  leaveTypes,
-  requestApprovals,
-  requests,
-  type RequestType,
-} from "@/db/schema";
+import { leaveBalances, leaveTypes, requestApprovals, requests } from "@/db/schema";
+import { LABEL_TIPE, rincianPengajuan } from "@/features/requests/ringkasan";
 import { TombolBatal } from "@/features/requests/tombol-batal";
 import { wajibMasuk } from "@/lib/auth/session";
 import { tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Pengajuan" };
-
-const LABEL_TIPE: Record<RequestType, string> = {
-  LEAVE: "Cuti",
-  OVERTIME: "Lembur",
-  BACKDATE: "Koreksi Absen",
-  PERMIT: "Izin",
-  OUTSIDE_AREA: "Absen Luar Area",
-  DEVICE_CHANGE: "Ganti Perangkat",
-};
 
 export default async function HalamanPengajuan() {
   const pengguna = await wajibMasuk();
@@ -167,23 +153,12 @@ export default async function HalamanPengajuan() {
           ) : (
             <ul className="mt-3 space-y-3">
               {daftar.map((r) => {
-                // Rincian tiap jenis disimpan di payload, jadi tanggal dan jamnya
-                // dibaca dari sana — bukan dari waktu pengajuan dibuat.
-                const p = (r.payload ?? {}) as Record<string, unknown>;
-                const tgl = typeof p.tanggal === "string" ? p.tanggal : null;
-                const mulai = typeof p.mulai === "string" ? p.mulai : null;
-                const selesai = typeof p.selesai === "string" ? p.selesai : null;
-                const sampai = typeof p.sampai === "string" ? p.sampai : null;
-
-                const waktu = [
-                  tgl ? tanggalPendek(tgl) : null,
-                  sampai && sampai !== tgl ? `– ${tanggalPendek(sampai)}` : null,
-                  mulai && selesai
-                    ? `${mulai.slice(0, 5)} – ${selesai.slice(0, 5)}`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(" ");
+                // Rincian tiap jenis dibaca lewat penolong bersama, sama persis
+                // dengan yang dipakai layar persetujuan admin.
+                const rincian = rincianPengajuan(
+                  r.tipe,
+                  r.payload as Record<string, unknown>,
+                );
 
                 return (
                   <li
@@ -209,12 +184,12 @@ export default async function HalamanPengajuan() {
                     </div>
 
                     <dl className="border-app space-y-1.5 border-t px-4 py-3 text-[13px]">
-                      {waktu && (
-                        <div className="flex gap-2">
-                          <dt className="text-muted w-24 shrink-0">Tanggal/Waktu</dt>
-                          <dd className="text-body flex-1 font-semibold">{waktu}</dd>
+                      {rincian.map((b) => (
+                        <div key={b.label} className="flex gap-2">
+                          <dt className="text-muted w-24 shrink-0">{b.label}</dt>
+                          <dd className="text-body flex-1 font-semibold">{b.nilai}</dd>
                         </div>
-                      )}
+                      ))}
                       {r.alasan && (
                         <div className="flex gap-2">
                           <dt className="text-muted w-24 shrink-0">Alasan</dt>

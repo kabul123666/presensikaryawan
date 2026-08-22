@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/field";
 import { Badge, BadgePengajuan } from "@/components/ui/status";
 import type { RequestStatus, RequestType } from "@/db/schema";
-import { cn, formatDurasi } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { tanggalPendek } from "@/lib/waktu";
+import { LABEL_TIPE, ringkasPengajuan } from "@/features/requests/ringkasan";
 import { aksiSetujui, aksiTolak, type HasilKeputusan } from "./actions";
 
 export type BarisTampil = {
@@ -26,15 +27,6 @@ export type BarisTampil = {
   departemen: string | null;
 };
 
-const LABEL_TIPE: Record<RequestType, string> = {
-  LEAVE: "Cuti",
-  OVERTIME: "Lembur",
-  BACKDATE: "Koreksi Absen",
-  PERMIT: "Izin / Sakit",
-  OUTSIDE_AREA: "Absen di Luar Area",
-  DEVICE_CHANGE: "Ganti Perangkat",
-};
-
 const NADA_TIPE: Record<RequestType, "brand" | "warn" | "danger" | "netral"> = {
   LEAVE: "brand",
   OVERTIME: "warn",
@@ -43,60 +35,6 @@ const NADA_TIPE: Record<RequestType, "brand" | "warn" | "danger" | "netral"> = {
   OUTSIDE_AREA: "danger",
   DEVICE_CHANGE: "danger",
 };
-
-/** Merangkum isi payload menjadi satu baris yang mudah dibaca penyetuju. */
-function ringkasPayload(
-  tipe: RequestType,
-  p: Record<string, unknown>,
-  namaJenisCuti: Record<string, string>,
-): string {
-  const teks = (k: string) => (typeof p[k] === "string" ? (p[k] as string) : null);
-  const angka = (k: string) => (p[k] === undefined ? null : Number(p[k]));
-
-  switch (tipe) {
-    case "LEAVE":
-    case "PERMIT": {
-      const jenis = teks("leaveTypeId");
-      const nama = jenis ? (namaJenisCuti[jenis] ?? "Cuti") : "Cuti";
-      const mulai = teks("mulai");
-      const akhir = teks("akhir");
-      const hari = angka("jumlahHari");
-      if (!mulai) return nama;
-      const rentang =
-        akhir && akhir !== mulai
-          ? `${tanggalPendek(mulai)} – ${tanggalPendek(akhir)}`
-          : tanggalPendek(mulai);
-      return `${nama} · ${rentang}${hari ? ` · ${hari} hari` : ""}`;
-    }
-    case "OVERTIME": {
-      const tanggal = teks("tanggal");
-      const menit = angka("menitLembur");
-      return [tanggal ? tanggalPendek(tanggal) : null, menit ? formatDurasi(menit) : null]
-        .filter(Boolean)
-        .join(" · ");
-    }
-    case "BACKDATE": {
-      const tanggal = teks("tanggal");
-      const masuk = teks("jamMasuk");
-      const pulang = teks("jamPulang");
-      return `${tanggal ? tanggalPendek(tanggal) : "—"} · ${masuk ?? "--:--"} → ${pulang ?? "--:--"}`;
-    }
-    case "OUTSIDE_AREA": {
-      const tanggal = teks("tanggal");
-      const jarak = angka("jarakM");
-      const jenis = teks("jenis");
-      return [
-        tanggal ? tanggalPendek(tanggal) : null,
-        jenis === "PULANG" ? "saat pulang" : "saat masuk",
-        jarak ? `${jarak} m dari kantor` : null,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-    }
-    case "DEVICE_CHANGE":
-      return "Permintaan mengikat perangkat baru ke akun";
-  }
-}
 
 export function TabelPersetujuan({
   daftar,
@@ -267,7 +205,7 @@ export function TabelPersetujuan({
                       </p>
 
                       <p className="text-body mt-2 text-sm font-semibold">
-                        {ringkasPayload(d.tipe, d.payload, namaJenisCuti)}
+                        {ringkasPengajuan(d.tipe, d.payload, namaJenisCuti)}
                       </p>
 
                       {d.alasan && (

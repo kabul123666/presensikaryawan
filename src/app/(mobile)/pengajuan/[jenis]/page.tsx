@@ -6,6 +6,7 @@ import { ArrowLeft, FileText, Plus } from "lucide-react";
 import { BadgePengajuan } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { requestApprovals, requests, type RequestType } from "@/db/schema";
+import { rincianPengajuan } from "@/features/requests/ringkasan";
 import { TombolBatal } from "@/features/requests/tombol-batal";
 import { wajibMasuk } from "@/lib/auth/session";
 import { tanggalPendek, tanggalWIB } from "@/lib/waktu";
@@ -124,19 +125,12 @@ export default async function HalamanDaftarJenis({
       ) : (
         <ul className="mt-4 space-y-3 px-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0 lg:px-0">
           {milikJenis.map((r) => {
-            const p = (r.payload ?? {}) as Record<string, unknown>;
-            const tgl = typeof p.tanggal === "string" ? p.tanggal : null;
-            const mulai = typeof p.mulai === "string" ? p.mulai : null;
-            const selesai = typeof p.selesai === "string" ? p.selesai : null;
-            const sampai = typeof p.sampai === "string" ? p.sampai : null;
-
-            const waktu = [
-              tgl ? tanggalPendek(tgl) : null,
-              sampai && sampai !== tgl ? `– ${tanggalPendek(sampai)}` : null,
-              mulai && selesai ? `${mulai.slice(0, 5)} – ${selesai.slice(0, 5)}` : null,
-            ]
-              .filter(Boolean)
-              .join(" ");
+            // Rincian tiap jenis dibaca lewat penolong bersama, sama persis
+            // dengan yang dipakai layar persetujuan admin.
+            const rincian = rincianPengajuan(
+              r.tipe,
+              r.payload as Record<string, unknown>,
+            );
 
             return (
               <li
@@ -157,12 +151,12 @@ export default async function HalamanDaftarJenis({
                 </div>
 
                 <dl className="border-app space-y-1.5 border-t px-4 py-3 text-[13px]">
-                  {waktu && (
-                    <div className="flex gap-2">
-                      <dt className="text-muted w-24 shrink-0">Tanggal/Waktu</dt>
-                      <dd className="text-body flex-1 font-semibold">{waktu}</dd>
+                  {rincian.map((b) => (
+                    <div key={b.label} className="flex gap-2">
+                      <dt className="text-muted w-24 shrink-0">{b.label}</dt>
+                      <dd className="text-body flex-1 font-semibold">{b.nilai}</dd>
                     </div>
-                  )}
+                  ))}
                   {r.alasan && (
                     <div className="flex gap-2">
                       <dt className="text-muted w-24 shrink-0">Alasan</dt>
