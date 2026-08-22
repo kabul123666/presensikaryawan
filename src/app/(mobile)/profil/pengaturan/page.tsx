@@ -8,12 +8,14 @@ import {
   KeyRound,
   Languages,
   LogOut,
+  Paintbrush,
   Palette,
   ScanFace,
   ShieldCheck,
 } from "lucide-react";
 
 import { PilihTema } from "@/components/mobile/pilih-tema";
+import { PilihWarna } from "@/components/mobile/pilih-warna";
 import { aksiKeluar } from "@/features/auth/actions";
 import { FormGantiPassword } from "@/features/employees/form-ganti-password";
 import { wajibMasuk } from "@/lib/auth/session";
@@ -87,6 +89,18 @@ export default async function HalamanPengaturanAkun() {
             <p className="text-body text-sm font-bold">Tema aplikasi</p>
           </div>
           <PilihTema />
+
+          <div className="border-app mt-4 border-t pt-4">
+            <div className="flex items-center gap-2.5">
+              <Paintbrush size={16} className="text-brand-600 dark:text-brand-300" />
+              <p className="text-body text-sm font-bold">Warna aplikasi</p>
+            </div>
+            <p className="text-muted mt-1 text-[12px] leading-relaxed">
+              Hanya warna aksen yang berubah. Warna status kehadiran sengaja tetap, supaya
+              arti hijau, jingga, dan merah tidak ikut bergeser.
+            </p>
+            <PilihWarna />
+          </div>
         </div>
       </section>
 

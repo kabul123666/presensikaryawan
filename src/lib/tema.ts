@@ -79,3 +79,41 @@ export function terapkanTema(tema: Tema) {
   document.documentElement.classList.toggle("dark", gelap);
   window.dispatchEvent(new Event(PERISTIWA));
 }
+
+/* ==========================================================================
+ * Warna aplikasi
+ * ========================================================================== */
+
+export type Warna = "hijau" | "biru" | "ungu" | "jingga" | "merah";
+
+const WARNA_SAH: Warna[] = ["hijau", "biru", "ungu", "jingga", "merah"];
+const KUNCI_WARNA = "alia-warna";
+
+/**
+ * Pilihan warna disimpan berdampingan dengan tema, bukan di basis data.
+ *
+ * Ini preferensi tampilan milik perangkat, sama seperti terang/gelap: karyawan
+ * yang membuka aplikasi dari ponsel dan dari komputer kantor boleh saja
+ * memilih berbeda, dan tidak ada gunanya menempuh perjalanan ke server hanya
+ * untuk mengganti warna tombol.
+ */
+function bacaWarna(): Warna {
+  const nilai = localStorage.getItem(KUNCI_WARNA);
+  return WARNA_SAH.includes(nilai as Warna) ? (nilai as Warna) : "hijau";
+}
+
+export function useWarna(): Warna {
+  return useSyncExternalStore(langgananTema, bacaWarna, () => "hijau");
+}
+
+/** Menyimpan pilihan warna, menerapkannya ke <html>, lalu memberi tahu pembaca. */
+export function terapkanWarna(warna: Warna) {
+  localStorage.setItem(KUNCI_WARNA, warna);
+
+  // Hijau adalah bawaan dan tidak punya blok CSS sendiri, jadi atributnya
+  // dilepas — bukan disetel ke "hijau" — supaya aturan bawaan yang berlaku.
+  if (warna === "hijau") delete document.documentElement.dataset.warna;
+  else document.documentElement.dataset.warna = warna;
+
+  window.dispatchEvent(new Event(PERISTIWA));
+}

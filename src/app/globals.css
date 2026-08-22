@@ -198,6 +198,74 @@
   }
 }
 
+/* --------------------------------------------------------------------
+ * Warna aplikasi yang bisa dipilih karyawan.
+ *
+ * Hanya deret `brand` yang berganti — latar, teks, dan warna status tetap
+ * netral. Aplikasi ini catatan kehadiran, bukan papan skor: mengganti seluruh
+ * palet akan membuat "terlambat" dan "alpa" ikut berubah arti warnanya.
+ *
+ * Setiap pilihan diredam ke arah tanah dengan cara yang sama seperti hijau
+ * bawaan, sehingga tabel absensi tetap terbaca sebagai dokumen resmi. Deret
+ * 600 ke atas dijaga cukup pekat agar teks putih di atas tombol tetap
+ * terbaca pada semua pilihan.
+ * ------------------------------------------------------------------ */
+:root[data-warna="biru"] {
+  --color-brand-50: #eef2f7;
+  --color-brand-100: #d5e0ec;
+  --color-brand-200: #adc2d9;
+  --color-brand-300: #7d9dc0;
+  --color-brand-400: #4f7aa6;
+  --color-brand-500: #2c5c8c;
+  --color-brand-600: #1b476f;
+  --color-brand-700: #143a5c;
+  --color-brand-800: #112f4a;
+  --color-brand-900: #0d2439;
+  --color-brand-950: #071322;
+}
+
+:root[data-warna="ungu"] {
+  --color-brand-50: #f2eff5;
+  --color-brand-100: #e0d8e9;
+  --color-brand-200: #c2b2d3;
+  --color-brand-300: #9d86b7;
+  --color-brand-400: #7b619b;
+  --color-brand-500: #5f4780;
+  --color-brand-600: #4a3565;
+  --color-brand-700: #3c2a53;
+  --color-brand-800: #302143;
+  --color-brand-900: #251934;
+  --color-brand-950: #140d1c;
+}
+
+:root[data-warna="jingga"] {
+  --color-brand-50: #fbf1ea;
+  --color-brand-100: #f4ddcb;
+  --color-brand-200: #e6bb9b;
+  --color-brand-300: #d4936a;
+  --color-brand-400: #c07145;
+  --color-brand-500: #a85a2c;
+  --color-brand-600: #8a4620;
+  --color-brand-700: #71391a;
+  --color-brand-800: #5c2f16;
+  --color-brand-900: #482511;
+  --color-brand-950: #271309;
+}
+
+:root[data-warna="merah"] {
+  --color-brand-50: #fbeef0;
+  --color-brand-100: #f4d9dd;
+  --color-brand-200: #e5b0b8;
+  --color-brand-300: #d0828f;
+  --color-brand-400: #b95b6c;
+  --color-brand-500: #9e3e50;
+  --color-brand-600: #822e3e;
+  --color-brand-700: #6b2533;
+  --color-brand-800: #571e2a;
+  --color-brand-900: #431720;
+  --color-brand-950: #240c11;
+}
+
 @layer utilities {
   .bg-app {
     background-color: var(--bg);

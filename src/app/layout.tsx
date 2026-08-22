@@ -44,14 +44,14 @@ export const viewport: Viewport = {
 };
 
 /**
- * Menerapkan tema sebelum paint agar tidak ada kedipan saat mode gelap.
+ * Menerapkan tema dan warna pilihan sebelum paint agar tidak ada kedipan.
  * Harus inline dan berjalan lebih dulu dari React.
  *
  * Tanpa nilai tersimpan hasilnya terang — itu tema bawaan aplikasi. Preferensi
  * gelap milik sistem operasi hanya diikuti bila pengguna memilih "Sistem"
  * secara sadar di Profil (lihat src/lib/tema.ts).
  */
-const themeScript = `(function(){try{var t=localStorage.getItem("alia-theme");var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("alia-theme");var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");var w=localStorage.getItem("alia-warna");if(w&&w!=="hijau"&&["biru","ungu","jingga","merah"].indexOf(w)>-1)document.documentElement.setAttribute("data-warna",w)}catch(e){}})();`;
 
 export default function RootLayout({
   children,

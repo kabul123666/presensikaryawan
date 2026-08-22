@@ -53,6 +53,16 @@ lagi.
   HMR yang basi memunculkan galat hidrasi yang bukan bug.
 - Peta hanya bisa diuji penuh di peramban yang izin lokasinya diberikan. Panel
   pratinjau menolak izin, jadi titik posisi tidak akan pernah muncul di sana.
+- **Leaflet memakai z-index ratusan** untuk panel petanya. Lapisan yang harus
+  tampil di atas peta perlu angka lebih tinggi, dan wadah petanya wajib diberi
+  `isolate` — tanpa itu angka setinggi itu ikut menembus panel absen yang
+  terbuka di atasnya.
+- **Jangan memeriksa `navigator` saat render.** Server tidak punya objek itu,
+  jadi kesimpulannya berbeda dari peramban dan hidrasi gagal diam-diam. Pakai
+  `useSyncExternalStore` dengan snapshot server, seperti di `gunakan-lokasi.ts`.
+- **Payload pengajuan berbeda kunci per jenis.** Baca lewat
+  `src/features/requests/ringkasan.ts`, jangan menebak sendiri — layar admin
+  dan layar karyawan pernah berbeda tampilan gara-gara itu.
 
 ## Sudah selesai
 
@@ -62,8 +72,9 @@ Manager ke departemennya · penugasan lintas cabang · penggantian password oleh
 admin · beranda bergaya aplikasi kepegawaian · menu pilihan yang bisa diatur
 karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · halaman
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
-dan formulir pengajuan per jenis · halaman riwayat kehadiran bergaya aplikasi
-kepegawaian · tampilan desktop untuk karyawan (sidebar + dua kolom).
+dan formulir pengajuan per jenis · tampilan desktop untuk karyawan (sidebar +
+dua kolom) · layar absen bergaya peta penuh di menu Presensi · rekap kehadiran
+berbentuk kartu per hari · pemilih warna aplikasi.
 
 Tampilan karyawan punya dua bentuk dari satu berkas halaman. Di bawah lebar
 `lg` (1024px): satu kolom selebar 430px dengan bilah bawah, seperti sebelumnya.
@@ -80,6 +91,9 @@ baru, ikuti pola yang sama — jangan membuat berkas terpisah untuk desktop.
 - **Menu bertanda "Segera"** — fiturnya belum ada sama sekali: Dinas, WFH,
   Aktivitas Harian, Claim, Bonus, Slip Gaji, Perjalanan Dinas, Performance,
   dan Tugas di bilah bawah.
+- **Pilihan warna aplikasi tinggal di localStorage**, bukan di basis data —
+  sama seperti terang/gelap. Karyawan yang berganti perangkat mulai dari hijau
+  lagi. Kalau nanti dianggap perlu ikut akun, itu perubahan tersendiri.
 - **Data pribadi belum bisa diisi**: kolom tempat/tanggal lahir, jenis kelamin,
   dan email sudah ada di basis data tetapi belum ada layar pengisinya, sehingga
   masih tampil sebagai tanda hubung di profil.
