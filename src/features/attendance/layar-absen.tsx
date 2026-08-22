@@ -132,7 +132,7 @@ export function LayarAbsen({
           {/* Judul di atas peta memakai peneduh supaya tetap terbaca di atas
               ubin peta yang warnanya tidak bisa ditebak. */}
           <div className="pt-safe pointer-events-none absolute inset-x-0 top-0 z-[1000] bg-gradient-to-b from-black/55 via-black/25 to-transparent px-5 pt-4 pb-10 lg:rounded-t-[var(--radius-sheet)] lg:pt-5">
-            <h1 className="text-center text-[19px] font-extrabold text-white drop-shadow">
+            <h1 className="text-center text-[19px] font-bold text-white drop-shadow">
               Presensi Kehadiran
             </h1>
             <p className="mt-1 text-center text-[13px] text-white/85 drop-shadow">
@@ -202,7 +202,7 @@ export function LayarAbsen({
           <div className="border-app mt-4 grid grid-cols-2 gap-3 border-t pt-4">
             <div>
               <p className="text-subtle text-[12px] font-semibold">Jadwal Mulai Kerja</p>
-              <p className="tnum text-body mt-1 text-[22px] leading-none font-extrabold">
+              <p className="tnum text-body mt-1 text-[22px] leading-none font-bold">
                 {jadwal ? jadwal.jamMasuk.slice(0, 5) : "--:--"}
               </p>
               <p className="text-subtle mt-1.5 text-[11px]">
@@ -213,7 +213,7 @@ export function LayarAbsen({
               <p className="text-subtle text-[12px] font-semibold">
                 Jadwal Selesai Kerja
               </p>
-              <p className="tnum text-body mt-1 text-[22px] leading-none font-extrabold">
+              <p className="tnum text-body mt-1 text-[22px] leading-none font-bold">
                 {jadwal ? jadwal.jamPulang.slice(0, 5) : "--:--"}
               </p>
               <p className="text-subtle mt-1.5 text-[11px]">
@@ -237,7 +237,7 @@ export function LayarAbsen({
           <div className="pb-safe pt-4 lg:pb-0">
             {selesai ? (
               <div className="bg-surface-muted rounded-[var(--radius-input)] px-4 py-4 text-center">
-                <p className="text-body text-sm font-extrabold">Absen hari ini selesai</p>
+                <p className="text-body text-sm font-bold">Absen hari ini selesai</p>
                 <p className="text-muted mt-1 text-[13px]">Sampai jumpa besok.</p>
               </div>
             ) : (

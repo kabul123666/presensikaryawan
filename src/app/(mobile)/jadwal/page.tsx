@@ -47,13 +47,12 @@ export default async function HalamanJadwal({
   return (
     <div className="pb-6">
       <header className="bg-surface border-app pt-safe border-b px-5 pb-6 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
-        <h1 className="text-body pt-4 text-[19px] font-extrabold lg:pt-2">Jadwal Jaga</h1>
-        <p className="text-subtle mt-0.5 text-xs">Shift yang ditetapkan HRD untuk Anda</p>
+        <h1 className="text-body pt-4 text-[18px] font-bold lg:pt-2">Jadwal Jaga</h1>
       </header>
 
       <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-start lg:gap-5">
         <div className="lg:space-y-4">
-          <div className="bg-surface border-app mx-5 -mt-3 flex items-center justify-between rounded-[var(--radius-card)] border px-2 py-2 shadow-[var(--shadow-soft)] lg:mx-0 lg:mt-0">
+          <div className="bg-surface border-app mx-5 mt-4 flex items-center justify-between rounded-[var(--radius-card)] border px-2 py-2 lg:mx-0 lg:mt-0">
             <Link
               href={geser(-1)}
               className="text-muted hover:bg-surface-muted grid size-9 place-items-center rounded-lg transition-colors"
@@ -61,9 +60,7 @@ export default async function HalamanJadwal({
             >
               <ChevronLeft size={19} />
             </Link>
-            <span className="text-body text-sm font-extrabold">
-              {namaBulan(tahun, bulan)}
-            </span>
+            <span className="text-body text-sm font-bold">{namaBulan(tahun, bulan)}</span>
             <Link
               href={geser(1)}
               className="text-muted hover:bg-surface-muted grid size-9 place-items-center rounded-lg transition-colors"
@@ -87,7 +84,7 @@ export default async function HalamanJadwal({
                 key={k.label}
                 className="bg-surface border-app rounded-[var(--radius-card)] border px-3 py-3 text-center"
               >
-                <p className={cn("tnum text-lg font-extrabold", k.warna)}>{k.nilai}</p>
+                <p className={cn("tnum text-lg font-bold", k.warna)}>{k.nilai}</p>
                 <p className="text-subtle mt-0.5 text-[11px] font-semibold">{k.label}</p>
               </div>
             ))}
@@ -95,9 +92,7 @@ export default async function HalamanJadwal({
         </div>
 
         <section className="mt-5 px-5 lg:mt-0 lg:px-0">
-          <h2 className="text-body text-sm font-extrabold tracking-tight">
-            Rincian per tanggal
-          </h2>
+          <h2 className="text-body text-[13px] font-semibold">Rincian per tanggal</h2>
           {belumDijadwalkan > 0 && (
             /* Diletakkan sekali di sini, bukan diulang pada tiap baris: staf yang
              memang tidak dijadwalkan akan melihat sebulan penuh baris kosong,
@@ -128,7 +123,7 @@ export default async function HalamanJadwal({
                     </p>
                     <p
                       className={cn(
-                        "tnum text-[17px] leading-tight font-extrabold",
+                        "tnum text-[17px] leading-tight font-bold",
                         iniHariIni ? "text-brand-700 dark:text-brand-300" : "text-body",
                       )}
                     >

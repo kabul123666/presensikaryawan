@@ -28,7 +28,7 @@ export default async function HalamanAturMenu() {
         >
           <ArrowLeft size={15} /> Semua Menu
         </Link>
-        <h1 className="text-body mt-3 text-[19px] font-extrabold lg:mt-2">
+        <h1 className="text-body mt-3 text-[18px] font-bold lg:mt-2">
           Atur Menu Beranda
         </h1>
       </header>

@@ -25,10 +25,7 @@ export default async function HalamanMenu() {
         >
           <ArrowLeft size={15} /> Beranda
         </Link>
-        <h1 className="text-body mt-3 text-[19px] font-extrabold lg:mt-2">Semua Menu</h1>
-        <p className="text-subtle mt-0.5 text-xs">
-          Seluruh fitur yang tersedia untuk Anda
-        </p>
+        <h1 className="text-body mt-3 text-[18px] font-bold lg:mt-2">Semua Menu</h1>
       </header>
 
       <MenuAplikasi penyetuju={PERAN_PENYETUJU.includes(pengguna.role)} />

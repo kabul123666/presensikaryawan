@@ -53,23 +53,23 @@ export default async function HalamanPengaturanAkun() {
 
   return (
     <div className="pb-10 lg:mx-auto lg:max-w-[720px]">
-      <header className="bg-brand-700 pt-safe px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:px-7">
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
         <div className="flex items-center gap-3 pt-4 lg:pt-2">
           <Link
             href="/profil"
-            className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"
+            className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-full transition-colors"
             aria-label="Kembali ke profil"
           >
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="text-[18px] font-extrabold text-white">Pengaturan Akun</h1>
+          <h1 className="text-body text-[18px] font-bold">Pengaturan Akun</h1>
         </div>
       </header>
 
       {/* Yang sudah berfungsi diletakkan lebih dulu supaya tidak tenggelam di
           antara baris yang belum bisa ditekan. */}
       <section className="mt-5 px-5">
-        <h2 className="text-body text-sm font-extrabold tracking-tight">Keamanan</h2>
+        <h2 className="text-body text-[13px] font-semibold">Keamanan</h2>
         <div className="border-app bg-surface mt-2 rounded-[var(--radius-card)] border p-4">
           <div className="flex items-center gap-2.5">
             <KeyRound size={16} className="text-brand-600 dark:text-brand-300" />
@@ -82,7 +82,7 @@ export default async function HalamanPengaturanAkun() {
       </section>
 
       <section className="mt-5 px-5">
-        <h2 className="text-body text-sm font-extrabold tracking-tight">Tampilan</h2>
+        <h2 className="text-body text-[13px] font-semibold">Tampilan</h2>
         <div className="border-app bg-surface mt-2 rounded-[var(--radius-card)] border p-4">
           <div className="flex items-center gap-2.5">
             <Palette size={16} className="text-brand-600 dark:text-brand-300" />
@@ -106,7 +106,7 @@ export default async function HalamanPengaturanAkun() {
 
       {SEGERA.map((k) => (
         <section key={k.judul} className="mt-5 px-5">
-          <h2 className="text-body text-sm font-extrabold tracking-tight">{k.judul}</h2>
+          <h2 className="text-body text-[13px] font-semibold">{k.judul}</h2>
           <ul className="border-app bg-surface mt-2 divide-y overflow-hidden rounded-[var(--radius-card)] border">
             {k.isi.map((b) => (
               <li

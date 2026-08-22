@@ -74,38 +74,37 @@ export default async function HalamanPengajuan() {
 
   return (
     <div className="pb-6">
-      <header className="bg-surface border-app pt-safe border-b px-5 pb-16 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7 lg:pb-7">
-        <h1 className="text-body pt-4 text-[19px] font-extrabold lg:pt-2">Pengajuan</h1>
-        <p className="text-subtle mt-0.5 text-xs">Cuti, lembur, dan koreksi kehadiran</p>
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
+        <h1 className="text-body pt-4 text-[18px] font-bold lg:pt-2">Pengajuan</h1>
       </header>
 
       <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start lg:gap-5">
         <div className="lg:space-y-5">
           {/* Saldo cuti */}
-          <div className="-mt-12 px-5 lg:mt-0 lg:px-0">
+          <div className="mt-4 px-5 lg:mt-0 lg:px-0">
             <div className="bg-surface rounded-[var(--radius-sheet)] p-5 shadow-[var(--shadow-raised)]">
               <p className="text-subtle text-xs font-semibold">
                 Sisa cuti tahunan {tahun}
               </p>
-              <p className="tnum text-body mt-1 text-[32px] leading-none font-extrabold">
+              <p className="tnum text-body mt-1 text-[32px] leading-none font-bold">
                 {sisaCuti} <span className="text-muted text-base font-bold">hari</span>
               </p>
               {cutiTahunan && (
                 <div className="border-app text-muted mt-4 grid grid-cols-3 gap-2 border-t pt-4 text-center text-[11px]">
                   <div>
-                    <p className="text-body tnum text-sm font-extrabold">
+                    <p className="text-body tnum text-sm font-bold">
                       {cutiTahunan.kuota}
                     </p>
                     <p className="mt-0.5">Kuota</p>
                   </div>
                   <div>
-                    <p className="text-body tnum text-sm font-extrabold">
+                    <p className="text-body tnum text-sm font-bold">
                       +{cutiTahunan.carryOver}
                     </p>
                     <p className="mt-0.5">Sisa tahun lalu</p>
                   </div>
                   <div>
-                    <p className="text-body tnum text-sm font-extrabold">
+                    <p className="text-body tnum text-sm font-bold">
                       {cutiTahunan.terpakai}
                     </p>
                     <p className="mt-0.5">Terpakai</p>
@@ -117,9 +116,7 @@ export default async function HalamanPengajuan() {
 
           {/* Jenis pengajuan */}
           <section className="mt-6 px-5 lg:mt-0 lg:px-0">
-            <h2 className="text-body text-sm font-extrabold tracking-tight">
-              Jenis pengajuan
-            </h2>
+            <h2 className="text-body text-[13px] font-semibold">Jenis pengajuan</h2>
             <div className="mt-3 grid grid-cols-2 gap-2.5">
               {jenisAjuan.map(({ href, label, Ikon }) => (
                 <Link
@@ -139,12 +136,10 @@ export default async function HalamanPengajuan() {
 
         {/* Riwayat pengajuan */}
         <section className="mt-6 px-5 lg:mt-0 lg:px-0">
-          <h2 className="text-body text-sm font-extrabold tracking-tight">
-            Riwayat pengajuan
-          </h2>
+          <h2 className="text-body text-[13px] font-semibold">Riwayat pengajuan</h2>
 
           {daftar.length === 0 ? (
-            <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-5 py-10 text-center">
+            <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border px-5 py-9 text-center">
               <p className="text-body text-sm font-bold">Belum ada pengajuan</p>
               <p className="text-muted mt-1 text-[13px]">
                 Pengajuan yang Anda buat akan muncul di sini.

@@ -92,19 +92,19 @@ export default async function HalamanDaftarJenis({
 
   return (
     <div className="pb-6">
-      <header className="bg-brand-700 pt-safe px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:px-7">
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
         <div className="flex items-center gap-3 pt-4 lg:pt-2">
           <Link
             href="/pengajuan"
-            className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"
+            className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-full transition-colors"
             aria-label="Kembali"
           >
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="flex-1 text-[18px] font-extrabold text-white">{info.judul}</h1>
+          <h1 className="text-body flex-1 text-[18px] font-bold">{info.judul}</h1>
           <Link
             href={`/pengajuan/${jenis}/baru`}
-            className="text-brand-700 grid size-9 place-items-center rounded-full bg-white transition-transform active:scale-95"
+            className="bg-brand-600 hover:bg-brand-700 grid size-9 place-items-center rounded-full text-white transition-colors active:scale-95"
             aria-label={`Ajukan ${info.judul.toLowerCase()}`}
           >
             <Plus size={20} />
@@ -114,7 +114,7 @@ export default async function HalamanDaftarJenis({
 
       {milikJenis.length === 0 ? (
         <div className="px-5 lg:px-0">
-          <div className="border-app bg-surface mt-5 rounded-[var(--radius-card)] border border-dashed px-5 py-12 text-center">
+          <div className="border-app bg-surface mt-5 rounded-[var(--radius-card)] border px-5 py-9 text-center">
             <FileText size={26} className="text-subtle mx-auto" />
             <p className="text-body mt-3 text-sm font-bold">{info.kosong}</p>
             <p className="text-muted mt-1 text-[13px]">

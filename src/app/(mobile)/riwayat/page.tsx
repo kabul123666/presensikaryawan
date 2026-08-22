@@ -112,9 +112,7 @@ export default async function HalamanPresensi({
         {/* ---------------------------------------------- Rekap kehadiran */}
         <section className="mt-6 px-5 lg:mt-4 lg:px-0">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-body text-sm font-extrabold tracking-tight">
-              Rekap kehadiran
-            </h2>
+            <h2 className="text-body text-[13px] font-semibold">Rekap kehadiran</h2>
             <div className="bg-surface border-app flex items-center gap-1 rounded-full border py-1 pr-1 pl-1">
               <Link
                 href={geser(-1)}
@@ -170,7 +168,7 @@ export default async function HalamanPresensi({
               },
             ].map((k) => (
               <div key={k.label}>
-                <p className={cn("tnum text-sm font-extrabold", k.warna)}>{k.nilai}</p>
+                <p className={cn("tnum text-sm font-bold", k.warna)}>{k.nilai}</p>
                 <p className="text-subtle mt-0.5 text-[10px] font-semibold">{k.label}</p>
               </div>
             ))}
@@ -179,7 +177,7 @@ export default async function HalamanPresensi({
           {/* Kartu per hari — bukan kalender: yang dicari orang adalah jam
               masuk dan pulangnya, dan itu tidak muat di dalam sel tanggal. */}
           {daftar.length === 0 ? (
-            <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-5 py-12 text-center">
+            <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border px-5 py-9 text-center">
               <Timer size={26} className="text-subtle mx-auto" />
               <p className="text-body mt-3 text-sm font-bold">Belum ada catatan</p>
               <p className="text-muted mt-1 text-[13px]">
@@ -200,7 +198,7 @@ export default async function HalamanPresensi({
                   >
                     <div className="flex items-center gap-3 px-4 py-3">
                       <span className="bg-brand-50 dark:bg-brand-900/40 grid size-11 shrink-0 place-items-center rounded-lg leading-none">
-                        <span className="text-brand-700 dark:text-brand-200 tnum text-[15px] font-extrabold">
+                        <span className="text-brand-700 dark:text-brand-200 tnum text-[15px] font-bold">
                           {tanggalKe}
                         </span>
                         <span className="text-brand-600 dark:text-brand-300 mt-0.5 text-[9px] font-bold">

@@ -70,7 +70,7 @@ export default async function BerandaKaryawan() {
                 {profil.nama}
               </span>
             )}
-            <h1 className="mt-2 truncate text-[20px] leading-tight font-extrabold text-white">
+            <h1 className="mt-2 truncate text-[20px] leading-tight font-bold text-white">
               {pengguna.nama}
             </h1>
             <p className="mt-0.5 truncate text-[13px] text-white/75">
@@ -139,9 +139,7 @@ export default async function BerandaKaryawan() {
             ].map((k) => (
               <div key={k.label}>
                 <p className="text-subtle text-[11px] font-semibold">{k.label}</p>
-                <p className="tnum text-body mt-0.5 text-[15px] font-extrabold">
-                  {k.nilai}
-                </p>
+                <p className="tnum text-body mt-0.5 text-[15px] font-bold">{k.nilai}</p>
               </div>
             ))}
           </div>
@@ -168,9 +166,7 @@ export default async function BerandaKaryawan() {
           {/* ------------------------------------------- Info dari manajemen */}
           <section className="mt-7 px-5 lg:mt-0 lg:px-0">
             <div className="flex items-center justify-between">
-              <h2 className="text-body text-sm font-extrabold tracking-tight">
-                Info dari Manajemen
-              </h2>
+              <h2 className="text-body text-[13px] font-semibold">Info dari Manajemen</h2>
               <Link
                 href="/notifikasi"
                 className="text-brand-700 dark:text-brand-300 text-xs font-semibold"
@@ -192,7 +188,7 @@ export default async function BerandaKaryawan() {
                 </p>
               </article>
             ) : (
-              <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border border-dashed px-4 py-8 text-center">
+              <div className="border-app bg-surface mt-3 rounded-[var(--radius-card)] border px-4 py-8 text-center">
                 <Megaphone size={22} className="text-subtle mx-auto" />
                 <p className="text-muted mt-2 text-[13px]">
                   Belum ada info dari manajemen

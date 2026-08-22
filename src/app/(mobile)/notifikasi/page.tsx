@@ -16,10 +16,7 @@ export default async function HalamanNotifikasi() {
   return (
     <div className="pb-6">
       <header className="bg-surface border-app pt-safe border-b px-5 pb-6 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
-        <h1 className="text-body pt-4 text-[19px] font-extrabold lg:pt-2">Notifikasi</h1>
-        <p className="text-subtle mt-0.5 text-xs">
-          Hasil persetujuan dan perubahan akun Anda
-        </p>
+        <h1 className="text-body pt-4 text-[18px] font-bold lg:pt-2">Notifikasi</h1>
       </header>
 
       <DaftarNotifikasi

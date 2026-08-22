@@ -45,7 +45,7 @@ export default async function HalamanSlipSaya({
           <ArrowLeft size={15} /> Kembali ke Fee Saya
         </Link>
         <div className="mt-3 flex items-center justify-between gap-3">
-          <h1 className="text-body text-[19px] font-extrabold">Slip Insentif</h1>
+          <h1 className="text-body text-[18px] font-bold">Slip Insentif</h1>
           <TombolCetak label="Cetak" />
         </div>
       </header>

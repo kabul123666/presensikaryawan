@@ -80,16 +80,16 @@ export default async function HalamanFormPengajuan({
 
   return (
     <div className="pb-6 lg:mx-auto lg:max-w-[720px]">
-      <header className="bg-brand-700 pt-safe px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:px-7">
+      <header className="bg-surface border-app pt-safe border-b px-5 pb-5 lg:rounded-[var(--radius-sheet)] lg:border lg:px-7">
         <div className="flex items-center gap-3 pt-4 lg:pt-2">
           <Link
             href={`/pengajuan/${jenis}`}
-            className="grid size-9 place-items-center rounded-full text-white transition-colors hover:bg-white/10"
+            className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-full transition-colors"
             aria-label="Kembali ke daftar pengajuan"
           >
             <ArrowLeft size={20} />
           </Link>
-          <h1 className="text-[18px] font-extrabold text-white">
+          <h1 className="text-body text-[18px] font-bold">
             {JUDUL_HALAMAN[jenis as Jenis]}
           </h1>
         </div>

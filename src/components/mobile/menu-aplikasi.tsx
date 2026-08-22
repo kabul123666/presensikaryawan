@@ -203,7 +203,7 @@ export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
   return (
     <section className="mt-6 px-5 lg:mt-0 lg:px-0">
       <div className="flex items-center justify-between">
-        <h2 className="text-body text-sm font-extrabold tracking-tight">Menu</h2>
+        <h2 className="text-body text-[13px] font-semibold">Menu</h2>
         <Link
           href="/menu/atur"
           className="text-brand-700 dark:text-brand-300 text-xs font-semibold"
@@ -241,7 +241,7 @@ export function MenuAplikasi({ penyetuju }: { penyetuju: boolean }) {
 
         return (
           <section key={k.judul}>
-            <h2 className="text-body text-sm font-extrabold tracking-tight">{k.judul}</h2>
+            <h2 className="text-body text-[13px] font-semibold">{k.judul}</h2>
             <div className="bg-surface border-app mt-2 grid grid-cols-4 gap-x-1 gap-y-3 lg:grid-cols-8 lg:rounded-[var(--radius-card)] lg:border lg:p-3">
               {menu.map((m) => (
                 <Petak key={m.label} m={m} />
