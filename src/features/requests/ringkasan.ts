@@ -130,3 +130,36 @@ export function ringkasPengajuan(
   if (baris.length === 0) return "—";
   return baris.map((b) => b.nilai).join(" · ");
 }
+
+/**
+ * Tanggal absensi yang akan ikut berubah bila pengajuan ini disetujui.
+ *
+ * Dipakai penjaga kunci periode: menyetujui koreksi absen atau cuti untuk
+ * tanggal yang rekapnya sudah dibekukan akan membuat angka yang sudah
+ * ditandatangani bergeser diam-diam. Kuncinya sama seperti di atas — sengaja
+ * dibaca dari satu tempat supaya tidak ada yang menebak lagi.
+ */
+export function tanggalTerdampak(
+  tipe: RequestType,
+  payload: Record<string, unknown> | null | undefined,
+): string[] {
+  const p = payload ?? {};
+
+  switch (tipe) {
+    case "LEAVE":
+    case "PERMIT": {
+      const mulai = teks(p, "mulai");
+      const akhir = teks(p, "akhir") ?? mulai;
+      return mulai && akhir ? [mulai, akhir] : [];
+    }
+    case "OVERTIME":
+    case "BACKDATE":
+    case "OUTSIDE_AREA": {
+      const tanggal = teks(p, "tanggal");
+      return tanggal ? [tanggal] : [];
+    }
+    case "DEVICE_CHANGE":
+      // Tidak menyentuh baris absensi mana pun.
+      return [];
+  }
+}

@@ -9,6 +9,7 @@ import { getDb } from "@/db/client";
 import { attendances, auditLogs, leaveBalances, leaveTypes, requests } from "@/db/schema";
 import { wajibMasuk, type PenggunaSesi } from "@/lib/auth/session";
 import { MAKS_UKURAN_FOTO, terlihatSepertiGambar } from "@/lib/foto";
+import { tanggalTerkunci } from "@/features/reports/kunci";
 import { bacaPengaturan } from "@/features/settings/service";
 import { storage } from "@/lib/storage";
 import { rentangTanggal, selisihHari, tanggalWIB } from "@/lib/waktu";
@@ -295,6 +296,17 @@ export async function aksiAjukanKoreksi(
     return {
       ok: false,
       pesan: `Koreksi hanya bisa diajukan maksimal ${kebijakan.batasBackdateHari} hari ke belakang.`,
+    };
+  }
+
+  // Ditolak sejak awal, bukan saat disetujui: karyawan berhak tahu sekarang
+  // bahwa tanggal itu memang sudah tidak bisa dikoreksi lagi.
+  const kunci = await tanggalTerkunci(d.tanggal);
+  if (kunci) {
+    return {
+      ok: false,
+      pesan:
+        "Rekap periode tanggal tersebut sudah dikunci dan tidak bisa dikoreksi lagi.",
     };
   }
 

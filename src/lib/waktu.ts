@@ -145,6 +145,30 @@ export function rentangTanggal(a: string, b: string): string[] {
   return hasil;
 }
 
+/**
+ * Rentang tanggal sebuah periode rekap.
+ *
+ * `hariMulai` adalah tanggal siklus potong gaji, 1–28. Satu berarti periode
+ * sama dengan bulan kalender. Nilai lain menggeser periodenya mundur:
+ * periode "Agustus" dengan hariMulai 26 berjalan dari 26 Juli sampai 25
+ * Agustus, sehingga bulan yang tertulis di rekap adalah bulan gajinya
+ * dibayarkan — bukan bulan sebagian besar harinya jatuh.
+ *
+ * Dibatasi 28 supaya tidak ada periode yang hilang di Februari.
+ */
+export function periodeRekap(tahun: number, bulan: number, hariMulai = 1) {
+  const hari = Math.min(28, Math.max(1, Math.trunc(hariMulai) || 1));
+  if (hari === 1) return batasBulan(tahun, bulan);
+
+  const dd = String(hari).padStart(2, "0");
+  const sebelum = bulan === 1 ? { t: tahun - 1, b: 12 } : { t: tahun, b: bulan - 1 };
+
+  return {
+    mulai: `${sebelum.t}-${String(sebelum.b).padStart(2, "0")}-${dd}`,
+    akhir: geserTanggal(`${tahun}-${String(bulan).padStart(2, "0")}-${dd}`, -1),
+  };
+}
+
 /** Tanggal pertama dan terakhir suatu bulan. */
 export function batasBulan(tahun: number, bulan: number) {
   const mulai = `${tahun}-${String(bulan).padStart(2, "0")}-01`;

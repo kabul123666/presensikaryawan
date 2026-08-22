@@ -16,6 +16,8 @@ import {
   requests,
   type RequestType,
 } from "@/db/schema";
+import { tanggalTerkunci } from "@/features/reports/kunci";
+import { tanggalTerdampak } from "@/features/requests/ringkasan";
 import { PERAN_PENYETUJU, wajibPeran, type PenggunaSesi } from "@/lib/auth/session";
 import { rentangTanggal, tanggalWIB, waktuWIB } from "@/lib/waktu";
 import { ambilPengajuan, bolehMemutuskan, LABEL_TIPE } from "./service";
@@ -231,6 +233,7 @@ async function putuskan(
 
   let berhasil = 0;
   let ditolakWewenang = 0;
+  let ditolakTerkunci = 0;
 
   for (const pengajuan of daftar) {
     if (pengajuan.status !== "PENDING") continue;
@@ -246,6 +249,30 @@ async function putuskan(
     if (!boleh) {
       ditolakWewenang++;
       continue;
+    }
+
+    /*
+     * Persetujuan yang menulis ulang absensi lama ditahan bila periodenya
+     * sudah dikunci. Penolakan tidak ditahan — menolak tidak mengubah baris
+     * absensi mana pun, dan pengajuan yang menggantung selamanya justru
+     * meninggalkan pekerjaan yang tak bisa ditutup siapa pun.
+     */
+    if (setuju) {
+      const tanggal = tanggalTerdampak(
+        pengajuan.tipe as RequestType,
+        pengajuan.payload as Record<string, unknown>,
+      );
+      let terkunci = false;
+      for (const t of tanggal) {
+        if (await tanggalTerkunci(t)) {
+          terkunci = true;
+          break;
+        }
+      }
+      if (terkunci) {
+        ditolakTerkunci++;
+        continue;
+      }
     }
 
     await db.insert(requestApprovals).values({
@@ -317,16 +344,22 @@ async function putuskan(
     return {
       ok: false,
       pesan:
-        ditolakWewenang > 0
-          ? "Anda tidak berwenang memutuskan pengajuan ini."
-          : "Tidak ada pengajuan yang bisa diproses.",
+        ditolakTerkunci > 0
+          ? "Tanggalnya berada di periode rekap yang sudah dikunci, jadi absensinya tidak bisa diubah lagi."
+          : ditolakWewenang > 0
+            ? "Anda tidak berwenang memutuskan pengajuan ini."
+            : "Tidak ada pengajuan yang bisa diproses.",
     };
   }
 
-  const tambahan =
+  const tambahan = [
     ditolakWewenang > 0
       ? ` ${ditolakWewenang} dilewati karena di luar wewenang Anda.`
-      : "";
+      : "",
+    ditolakTerkunci > 0
+      ? ` ${ditolakTerkunci} dilewati karena periodenya sudah dikunci.`
+      : "",
+  ].join("");
 
   return {
     ok: true,

@@ -14,18 +14,27 @@ import {
   users,
   workLogItems,
 } from "@/db/schema";
+import { bacaPengaturan } from "@/features/settings/service";
 import {
-  batasBulan,
   geserTanggal,
   hariPekanWIB,
+  periodeRekap,
   rentangTanggal,
   selisihHari,
   tanggalWIB,
 } from "@/lib/waktu";
 
+/**
+ * Periode dibawa sebagai rentang tanggal, bukan pasangan tahun-bulan.
+ *
+ * Siklus potong gaji klinik tidak selalu jatuh tanggal satu, jadi periode
+ * "Agustus" bisa saja berjalan 26 Juli sampai 25 Agustus. Rentangnya disusun
+ * pemanggil lewat `periodeRekap`, dan berkas ini tidak perlu tahu tanggal
+ * berapa siklusnya dimulai.
+ */
 export type FilterRekap = {
-  tahun: number;
-  bulan: number;
+  mulai: string;
+  akhir: string;
   departmentId?: string;
   employeeId?: string;
 };
@@ -36,6 +45,7 @@ export type BarisRekap = {
   nik: string | null;
   jabatan: string | null;
   departemen: string | null;
+  departmentId: string | null;
   hadir: number;
   tepatWaktu: number;
   terlambat: number;
@@ -51,7 +61,7 @@ export type BarisRekap = {
 };
 
 function syaratPeriode(filter: FilterRekap) {
-  const { mulai, akhir } = batasBulan(filter.tahun, filter.bulan);
+  const { mulai, akhir } = filter;
   const syarat: SQL[] = [
     gte(attendances.tanggal, mulai),
     lte(attendances.tanggal, akhir),
@@ -59,6 +69,18 @@ function syaratPeriode(filter: FilterRekap) {
   if (filter.departmentId) syarat.push(eq(employees.departmentId, filter.departmentId));
   if (filter.employeeId) syarat.push(eq(attendances.employeeId, filter.employeeId));
   return { syarat, mulai, akhir };
+}
+
+/**
+ * Rentang tanggal periode rekap menurut kebijakan siklus yang berlaku.
+ *
+ * Dipakai layar rekap, halaman rincian, dan berkas unduhan — ketiganya harus
+ * memotong periode di tanggal yang sama, kalau tidak angka di layar dan di
+ * berkas bisa berbeda tanpa ada yang menyadarinya.
+ */
+export async function rentangPeriode(tahun: number, bulan: number) {
+  const kebijakan = await bacaPengaturan("kebijakan_absensi");
+  return periodeRekap(tahun, bulan, kebijakan.hariMulaiPeriode);
 }
 
 /**
@@ -78,6 +100,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
       nik: users.nik,
       jabatan: positions.nama,
       departemen: departments.nama,
+      departmentId: employees.departmentId,
       hadir: sql<number>`count(*) filter (where ${attendances.clockInAt} is not null)`,
       tepatWaktu: sql<number>`count(*) filter (where ${attendances.status} = 'ON_TIME')`,
       terlambat: sql<number>`count(*) filter (where ${attendances.menitTerlambat} > 0)`,
@@ -96,7 +119,14 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
     .leftJoin(positions, eq(positions.id, employees.positionId))
     .leftJoin(departments, eq(departments.id, employees.departmentId))
     .where(and(...syarat))
-    .groupBy(employees.id, employees.nama, users.nik, positions.nama, departments.nama)
+    .groupBy(
+      employees.id,
+      employees.nama,
+      users.nik,
+      positions.nama,
+      departments.nama,
+      employees.departmentId,
+    )
     .orderBy(asc(employees.nama));
 
   // Fee dihitung terpisah supaya jumlah baris absensi tidak terganda oleh
@@ -123,6 +153,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
     nik: b.nik,
     jabatan: b.jabatan,
     departemen: b.departemen,
+    departmentId: b.departmentId,
     hadir: Number(b.hadir),
     tepatWaktu: Number(b.tepatWaktu),
     terlambat: Number(b.terlambat),
@@ -151,6 +182,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
         nik: users.nik,
         jabatan: positions.nama,
         departemen: departments.nama,
+        departmentId: employees.departmentId,
       })
       .from(employees)
       .innerJoin(users, eq(users.id, employees.userId))
@@ -268,7 +300,7 @@ export async function opsiPenyaring() {
  */
 export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, number>> {
   const db = await getDb();
-  const { mulai, akhir } = batasBulan(filter.tahun, filter.bulan);
+  const { mulai, akhir } = filter;
 
   // Alpa hanya dihitung sampai kemarin — hari ini belum tentu selesai.
   const kemarin = geserTanggal(tanggalWIB(), -1);

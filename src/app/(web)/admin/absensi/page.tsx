@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Lock } from "lucide-react";
 
 import { Card, CardBody } from "@/components/ui/card";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
-import { opsiPenyaring, rekapPeriode, totalRekap } from "@/features/reports/service";
+import { kunciPeriode, rekapPeriodeAtauKunci } from "@/features/reports/kunci";
+import { opsiPenyaring, rentangPeriode, totalRekap } from "@/features/reports/service";
+import { TombolKunci } from "@/features/reports/tombol-kunci";
 import { bacaPengaturan } from "@/features/settings/service";
 import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { cn, formatDurasi, formatRupiah } from "@/lib/utils";
-import { namaBulan, tanggalWIB } from "@/lib/waktu";
+import { namaBulan, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Rekap Absensi" };
 
@@ -45,12 +47,17 @@ export default async function HalamanRekapAbsensi({
     );
   }
 
-  const [baris, opsi, profil] = await Promise.all([
-    rekapPeriode({ tahun, bulan, departmentId }),
+  const rentang = await rentangPeriode(tahun, bulan);
+
+  const [hasil, opsi, profil, kunci] = await Promise.all([
+    rekapPeriodeAtauKunci({ ...rentang, departmentId }),
     opsiPenyaring(),
     bacaPengaturan("profil_perusahaan"),
+    kunciPeriode(rentang.mulai, rentang.akhir),
   ]);
+  const baris = hasil.baris;
   const total = totalRekap(baris);
+  const rentangTeks = `${tanggalPendek(rentang.mulai)} – ${tanggalPendek(rentang.akhir)}`;
 
   const geser = (delta: number) => {
     const m = bulan + delta;
@@ -81,7 +88,15 @@ export default async function HalamanRekapAbsensi({
               : "Ringkasan kehadiran anggota departemen Anda per periode."}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-start gap-2">
+          {lingkup.semua && (
+            <TombolKunci
+              tahun={tahun}
+              bulan={bulan}
+              kunciId={kunci?.id}
+              bolehBuka={pengguna.role === "SUPER_ADMIN"}
+            />
+          )}
           <TombolCetak />
           <a
             href={`/api/ekspor/absensi?${paramEkspor}`}
@@ -98,7 +113,9 @@ export default async function HalamanRekapAbsensi({
           REKAP ABSENSI KARYAWAN
           {profil.nama ? ` — ${profil.nama.toUpperCase()}` : ""}
         </h1>
-        <p className="text-center text-sm">Periode {namaBulan(tahun, bulan)}</p>
+        <p className="text-center text-sm">
+          Periode {namaBulan(tahun, bulan)} ({rentangTeks})
+        </p>
       </div>
 
       {/* Penyaring */}
@@ -111,8 +128,11 @@ export default async function HalamanRekapAbsensi({
           >
             <ChevronLeft size={18} />
           </Link>
-          <span className="text-body min-w-40 px-3 text-center text-sm font-bold">
-            {namaBulan(tahun, bulan)}
+          <span className="min-w-44 px-3 text-center">
+            <span className="text-body block text-sm font-bold">
+              {namaBulan(tahun, bulan)}
+            </span>
+            <span className="text-subtle tnum block text-[11px]">{rentangTeks}</span>
           </span>
           <Link
             href={geser(1)}
@@ -122,6 +142,14 @@ export default async function HalamanRekapAbsensi({
             <ChevronRight size={18} />
           </Link>
         </div>
+
+        {kunci && (
+          <span className="bg-surface-muted text-muted inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold">
+            <Lock size={13} />
+            Terkunci {tanggalPendek(tanggalWIB(kunci.dikunciAt))}
+            {kunci.olehNama ? ` oleh ${kunci.olehNama}` : ""}
+          </span>
+        )}
 
         {lingkup.semua ? (
           <form action="/admin/absensi" className="flex gap-2">

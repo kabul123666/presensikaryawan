@@ -7,7 +7,8 @@ import { BadgeAbsen } from "@/components/ui/status";
 import { Badge } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { departments, employees, positions, users } from "@/db/schema";
-import { detailHarian, rekapPeriode } from "@/features/reports/service";
+import { rekapPeriodeAtauKunci } from "@/features/reports/kunci";
+import { detailHarian, rentangPeriode } from "@/features/reports/service";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
 import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
@@ -62,10 +63,13 @@ export default async function HalamanDetailAbsensi({
     redirect("/tidak-berwenang");
   }
 
-  const [detail, rekap] = await Promise.all([
-    detailHarian({ tahun, bulan, employeeId }),
-    rekapPeriode({ tahun, bulan, employeeId }),
+  const rentang = await rentangPeriode(tahun, bulan);
+
+  const [detail, hasilRekap] = await Promise.all([
+    detailHarian({ ...rentang, employeeId }),
+    rekapPeriodeAtauKunci({ ...rentang, employeeId }),
   ]);
+  const rekap = hasilRekap.baris;
   const ringkas = rekap[0];
 
   return (

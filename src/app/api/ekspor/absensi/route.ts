@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { rekapPeriode, totalRekap } from "@/features/reports/service";
+import { rekapPeriodeAtauKunci } from "@/features/reports/kunci";
+import { rentangPeriode, totalRekap } from "@/features/reports/service";
 import { bacaPengaturan } from "@/features/settings/service";
 import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { formatDurasi } from "@/lib/utils";
@@ -40,7 +41,8 @@ export async function GET(request: Request) {
   }
 
   const profil = await bacaPengaturan("profil_perusahaan");
-  const baris = await rekapPeriode({ tahun, bulan, departmentId });
+  const rentang = await rentangPeriode(tahun, bulan);
+  const { baris } = await rekapPeriodeAtauKunci({ ...rentang, departmentId });
   const total = totalRekap(baris);
 
   const ExcelJS = await import("exceljs");

@@ -595,6 +595,36 @@ export const yearEndClosings = pgTable(
   (t) => [unique("year_end_closings_tahun_unique").on(t.tahun)],
 );
 
+/**
+ * Periode rekap yang sudah dikunci.
+ *
+ * Alpa tidak disimpan sebagai baris absensi — ia dihitung ulang setiap kali
+ * rekap dibuka (lihat `hitungAlpa`). Cara itu benar selama periodenya masih
+ * berjalan, tetapi berbahaya sesudah angkanya dipakai membayar orang:
+ * mengedit shift atau menambah hari libur bulan lalu diam-diam mengubah rekap
+ * yang sudah dicetak.
+ *
+ * Mengunci periode membekukan hasil hitungannya ke dalam `rekap`, dan sejak
+ * saat itu rekap periode tersebut dibaca dari sini — bukan dihitung ulang.
+ * Absensi di dalam rentangnya pun tidak bisa lagi diubah.
+ */
+export const periodLocks = pgTable(
+  "period_locks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    mulai: date("mulai").notNull(),
+    akhir: date("akhir").notNull(),
+    /** Salinan baris rekap saat dikunci; bentuknya mengikuti BarisRekap. */
+    rekap: jsonb("rekap").$type<Record<string, unknown>[]>().notNull().default([]),
+    dikunciOleh: uuid("dikunci_oleh").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    dikunciAt: timestamp("dikunci_at", { withTimezone: true }).notNull().defaultNow(),
+    catatan: text("catatan"),
+  },
+  (t) => [unique("period_locks_rentang_unique").on(t.mulai, t.akhir)],
+);
+
 /* ==========================================================================
  * Komunikasi & jejak
  * ========================================================================== */

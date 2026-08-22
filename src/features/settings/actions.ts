@@ -114,6 +114,7 @@ export async function aksiSimpanProfil(
 
 const skemaAbsensi = z.object({
   batasBackdateHari: z.coerce.number().int().min(0).max(90),
+  hariMulaiPeriode: z.coerce.number().int().min(1).max(28),
   minKarakterCatatan: z.coerce.number().int().min(0).max(500),
   retensiFotoBulan: z.coerce.number().int().min(1).max(120),
   wajibCatatanKerja: z.coerce.boolean().optional(),
@@ -140,6 +141,7 @@ export async function aksiSimpanKebijakanAbsensi(
     "kebijakan_absensi",
     {
       batasBackdateHari: parsed.data.batasBackdateHari,
+      hariMulaiPeriode: parsed.data.hariMulaiPeriode,
       minKarakterCatatan: parsed.data.minKarakterCatatan,
       retensiFotoBulan: parsed.data.retensiFotoBulan,
       wajibCatatanKerja: parsed.data.wajibCatatanKerja ?? false,

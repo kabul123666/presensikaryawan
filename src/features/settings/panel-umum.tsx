@@ -113,6 +113,24 @@ export function PanelUmum({
           <Hint>Karyawan tidak bisa mengajukan koreksi lebih lama dari ini.</Hint>
         </div>
 
+        <div>
+          <Label htmlFor="hariMulaiPeriode">Tanggal mulai periode rekap</Label>
+          <Input
+            id="hariMulaiPeriode"
+            name="hariMulaiPeriode"
+            type="number"
+            min={1}
+            max={28}
+            defaultValue={absensi.hariMulaiPeriode}
+            required
+          />
+          <Hint>
+            Isi 1 bila rekap mengikuti bulan kalender. Isi 26 bila siklus potong gaji
+            berjalan tanggal 26 sampai 25 — rekap Agustus lalu berisi 26 Juli sampai 25
+            Agustus. Dibatasi 28 supaya tidak ada periode yang hilang di Februari.
+          </Hint>
+        </div>
+
         <label className="border-app bg-surface-muted flex cursor-pointer items-start gap-3 rounded-[var(--radius-input)] border p-3.5">
           <input
             type="checkbox"

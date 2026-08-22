@@ -32,6 +32,14 @@ export type ProfilPerusahaan = {
 
 export type KebijakanAbsensi = {
   batasBackdateHari: number;
+  /**
+   * Tanggal mulai periode rekap, 1–28.
+   *
+   * Satu berarti periode mengikuti bulan kalender. Dua puluh enam berarti
+   * periode "Agustus" berjalan 26 Juli sampai 25 Agustus — siklus potong gaji
+   * klinik jarang jatuh persis di tanggal satu.
+   */
+  hariMulaiPeriode: number;
   wajibCatatanKerja: boolean;
   minKarakterCatatan: number;
   retensiFotoBulan: number;
@@ -69,6 +77,7 @@ const BAWAAN: {
   },
   kebijakan_absensi: {
     batasBackdateHari: 7,
+    hariMulaiPeriode: 1,
     wajibCatatanKerja: true,
     minKarakterCatatan: 10,
     retensiFotoBulan: 24,
