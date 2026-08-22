@@ -234,6 +234,7 @@ async function putuskan(
   let berhasil = 0;
   let ditolakWewenang = 0;
   let ditolakTerkunci = 0;
+  let ditolakSendiri = 0;
 
   for (const pengajuan of daftar) {
     if (pengajuan.status !== "PENDING") continue;
@@ -248,6 +249,27 @@ async function putuskan(
     });
     if (!boleh) {
       ditolakWewenang++;
+      continue;
+    }
+
+    /*
+     * Tidak boleh menyetujui pengajuan sendiri.
+     *
+     * Kepala unit yang menjadi penyetuju juga mengajukan cuti untuk dirinya
+     * sendiri, dan tanpa penjagaan ini ia bisa meloloskannya seorang diri.
+     * Menolak pengajuan sendiri tetap diizinkan — akibatnya sama saja dengan
+     * membatalkan, dan itu memang haknya.
+     *
+     * Super admin dikecualikan dengan alasan yang sama seperti di
+     * `bolehMemutuskan`: dia pemilik sistem dan harus bisa membuka kebuntuan
+     * ketika tidak ada orang lain yang berwenang memutuskan.
+     */
+    if (
+      setuju &&
+      pengajuan.userId === pengguna.userId &&
+      pengguna.role !== "SUPER_ADMIN"
+    ) {
+      ditolakSendiri++;
       continue;
     }
 
@@ -344,11 +366,13 @@ async function putuskan(
     return {
       ok: false,
       pesan:
-        ditolakTerkunci > 0
-          ? "Tanggalnya berada di periode rekap yang sudah dikunci, jadi absensinya tidak bisa diubah lagi."
-          : ditolakWewenang > 0
-            ? "Anda tidak berwenang memutuskan pengajuan ini."
-            : "Tidak ada pengajuan yang bisa diproses.",
+        ditolakSendiri > 0
+          ? "Pengajuan sendiri tidak bisa Anda setujui — mintakan ke penyetuju lain."
+          : ditolakTerkunci > 0
+            ? "Tanggalnya berada di periode rekap yang sudah dikunci, jadi absensinya tidak bisa diubah lagi."
+            : ditolakWewenang > 0
+              ? "Anda tidak berwenang memutuskan pengajuan ini."
+              : "Tidak ada pengajuan yang bisa diproses.",
     };
   }
 
@@ -358,6 +382,9 @@ async function putuskan(
       : "",
     ditolakTerkunci > 0
       ? ` ${ditolakTerkunci} dilewati karena periodenya sudah dikunci.`
+      : "",
+    ditolakSendiri > 0
+      ? ` ${ditolakSendiri} dilewati karena pengajuan Anda sendiri.`
       : "",
   ].join("");
 
