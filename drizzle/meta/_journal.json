@@ -43,6 +43,13 @@
       "when": 1787437499767,
       "tag": "0005_melted_spitfire",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787437879652,
+      "tag": "0006_slim_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

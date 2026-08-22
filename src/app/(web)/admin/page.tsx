@@ -12,6 +12,7 @@ import {
   ringkasanHariIni,
   trenKehadiran,
 } from "@/features/admin/service";
+import { LABEL_FLAG } from "@/features/admin/tabel-anomali";
 import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 import { jamWIB, tanggalPanjang, tanggalPendek, tanggalWIB } from "@/lib/waktu";
@@ -25,15 +26,6 @@ const LABEL_TIPE: Record<RequestType, string> = {
   PERMIT: "Izin",
   OUTSIDE_AREA: "Absen luar area",
   DEVICE_CHANGE: "Ganti perangkat",
-};
-
-const LABEL_FLAG: Record<string, string> = {
-  MOCK_GPS: "Indikasi GPS palsu",
-  DILUAR_AREA: "Absen di luar area",
-  DILUAR_AREA_PULANG: "Pulang di luar area",
-  DEVICE_BARU: "Perangkat baru",
-  HARI_LIBUR: "Absen di hari libur",
-  TANPA_SHIFT: "Tanpa shift terjadwal",
 };
 
 function KartuAngka({
@@ -351,7 +343,12 @@ export default async function HalamanDashboard() {
           )}
 
           {tinjau.length > 0 && (
-            <Panel judul="Perlu ditinjau" jumlah={tinjau.length}>
+            <Panel
+              judul="Perlu ditinjau"
+              jumlah={tinjau.length}
+              tautan="/admin/anomali"
+              labelTautan="Tinjau"
+            >
               <ul className="divide-app divide-y">
                 {tinjau.map((t) => (
                   <li key={t.id} className="px-4 py-2.5">

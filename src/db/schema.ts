@@ -371,6 +371,20 @@ export const attendances = pgTable(
     /** true bila baris ini hasil koreksi/backdate yang disetujui. */
     hasilKoreksi: boolean("hasil_koreksi").notNull().default(false),
 
+    /*
+     * Jejak peninjauan anomali.
+     *
+     * Penanda di `flags` tidak pernah dihapus — ia bukti apa yang terjadi saat
+     * absen tercatat. Yang ditandai di sini adalah bahwa seorang admin sudah
+     * melihatnya dan memutuskan, sehingga barisnya keluar dari antrean tinjau
+     * tanpa buktinya ikut hilang.
+     */
+    ditinjauAt: timestamp("ditinjau_at", { withTimezone: true }),
+    ditinjauOleh: uuid("ditinjau_oleh").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    catatanTinjau: text("catatan_tinjau"),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

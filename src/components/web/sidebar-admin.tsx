@@ -19,6 +19,7 @@ import {
   Users,
   Wallet,
   X,
+  ShieldAlert,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -37,6 +38,12 @@ const KELOMPOK = [
     menu: [
       { href: "/admin", label: "Dashboard", Ikon: LayoutDashboard, exact: true },
       { href: "/admin/absensi", label: "Rekap Absensi", Ikon: CalendarRange },
+      {
+        href: "/admin/anomali",
+        label: "Tinjau Anomali",
+        Ikon: ShieldAlert,
+        hanyaAdmin: true,
+      },
       {
         href: "/admin/persetujuan",
         label: "Persetujuan",
