@@ -1,6 +1,17 @@
 import "server-only";
 
-import { and, asc, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lte,
+  notInArray,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import {
@@ -15,6 +26,7 @@ import {
   workLogItems,
 } from "@/db/schema";
 import { bacaPengaturan } from "@/features/settings/service";
+import { PERAN_TANPA_ABSEN } from "@/lib/auth/session";
 import {
   geserTanggal,
   hariPekanWIB,
@@ -37,6 +49,8 @@ export type FilterRekap = {
   akhir: string;
   departmentId?: string;
   employeeId?: string;
+  /** Batas cabang milik pemilik klinik; kosong berarti seluruh jaringan. */
+  locationIds?: string[];
 };
 
 export type BarisRekap = {
@@ -68,6 +82,9 @@ function syaratPeriode(filter: FilterRekap) {
   ];
   if (filter.departmentId) syarat.push(eq(employees.departmentId, filter.departmentId));
   if (filter.employeeId) syarat.push(eq(attendances.employeeId, filter.employeeId));
+  if (filter.locationIds?.length) {
+    syarat.push(inArray(employees.locationId, filter.locationIds));
+  }
   return { syarat, mulai, akhir };
 }
 
@@ -348,6 +365,13 @@ export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, nu
     syaratKaryawan.push(eq(employees.departmentId, filter.departmentId));
   }
   if (filter.employeeId) syaratKaryawan.push(eq(employees.id, filter.employeeId));
+  if (filter.locationIds?.length) {
+    syaratKaryawan.push(inArray(employees.locationId, filter.locationIds));
+  }
+
+  // Pemilik dan pengelola sistem tidak pernah dihitung alpa — mereka bukan
+  // staf terjadwal, dan menagih kehadiran mereka hanya membuat rekap salah.
+  syaratKaryawan.push(notInArray(users.role, PERAN_TANPA_ABSEN));
 
   const [daftarKaryawan, liburNasional, roster, sudahAbsen] = await Promise.all([
     db

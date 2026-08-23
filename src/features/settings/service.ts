@@ -87,6 +87,7 @@ export type KebijakanAbsensi = {
  */
 export type AksesMenu = {
   ADMIN: string[];
+  OWNER: string[];
   MANAGER: string[];
 };
 
@@ -124,6 +125,10 @@ const BAWAAN: {
   },
   akses_menu: {
     ADMIN: SEMUA_KUNCI_MENU,
+    // Pemilik memantau, bukan mengelola sistem: pengaturan dan audit tidak
+    // ikut dibuka sebagai bawaan. Pemilik sistem bisa menambahkannya bila
+    // memang dikehendaki.
+    OWNER: SEMUA_KUNCI_MENU.filter((k) => k !== "pengaturan" && k !== "audit"),
     MANAGER: SEMUA_KUNCI_MENU,
   },
   kebijakan_cuti: {

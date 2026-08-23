@@ -26,7 +26,22 @@ import {
  * Enum
  * ========================================================================== */
 
-export const roleEnum = pgEnum("role", ["SUPER_ADMIN", "ADMIN", "MANAGER", "KARYAWAN"]);
+/**
+ * OWNER adalah pemilik klinik, bukan pengelola sistem.
+ *
+ * Ia melihat data operasional cabang miliknya — kehadiran, pengajuan, rekap —
+ * tetapi tidak mengurus pengaturan sistem. Cabang mana yang jadi haknya
+ * ditentukan penempatannya, sama seperti karyawan lintas cabang: pemilik satu
+ * klinik hanya melihat kliniknya, pemilik seluruh jaringan ditugaskan ke
+ * semua cabang.
+ */
+export const roleEnum = pgEnum("role", [
+  "SUPER_ADMIN",
+  "ADMIN",
+  "OWNER",
+  "MANAGER",
+  "KARYAWAN",
+]);
 
 export const userStatusEnum = pgEnum("user_status", [
   "PENDING_APPROVAL", // mendaftar sendiri, menunggu verifikasi admin

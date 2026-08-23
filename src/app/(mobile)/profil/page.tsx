@@ -15,6 +15,7 @@ export const metadata = { title: "Profil Saya" };
 const LABEL_PERAN: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
   ADMIN: "Admin / HRD",
+  OWNER: "Pemilik",
   MANAGER: "Kepala Unit",
   KARYAWAN: "Karyawan",
 };

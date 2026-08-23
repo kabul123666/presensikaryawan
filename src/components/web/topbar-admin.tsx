@@ -10,6 +10,7 @@ import { inisial } from "@/lib/utils";
 const LABEL_PERAN: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
   ADMIN: "Admin / HRD",
+  OWNER: "Pemilik",
   MANAGER: "Kepala Unit",
 };
 

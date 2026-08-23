@@ -29,7 +29,7 @@ export default async function HalamanRekapAbsensi({
 
   // Manager terkunci ke departemennya; parameter ?dept dari alamat diabaikan
   // sepenuhnya agar batas ini tidak bisa dilangkahi dengan mengetik URL.
-  const lingkup = lingkupData(pengguna);
+  const lingkup = await lingkupData(pengguna);
   const departmentId = lingkup.semua ? sp.dept : (lingkup.departmentId ?? undefined);
 
   if (!lingkup.semua && !lingkup.departmentId) {
@@ -51,7 +51,11 @@ export default async function HalamanRekapAbsensi({
   const rentang = await rentangPeriode(tahun, bulan);
 
   const [hasil, opsi, profil, kunci] = await Promise.all([
-    rekapPeriodeAtauKunci({ ...rentang, departmentId }),
+    rekapPeriodeAtauKunci({
+      ...rentang,
+      departmentId,
+      locationIds: lingkup.locationIds ?? undefined,
+    }),
     opsiPenyaring(),
     bacaPengaturan("profil_perusahaan"),
     kunciPeriode(rentang.mulai, rentang.akhir),

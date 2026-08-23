@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
   // Berkas unduhan menempuh jalur terpisah dari layar, jadi batas departemen
   // manager harus ditegakkan lagi di sini — bukan diwarisi dari halaman.
-  const lingkup = lingkupData(pengguna);
+  const lingkup = await lingkupData(pengguna);
   const departmentId = lingkup.semua
     ? (url.searchParams.get("dept") ?? undefined)
     : (lingkup.departmentId ?? undefined);
@@ -45,10 +45,18 @@ export async function GET(request: Request) {
 
   const profil = await bacaPengaturan("profil_perusahaan");
   const rentang = await rentangPeriode(tahun, bulan);
-  const { baris } = await rekapPeriodeAtauKunci({ ...rentang, departmentId });
+  const { baris } = await rekapPeriodeAtauKunci({
+    ...rentang,
+    departmentId,
+    locationIds: lingkup.locationIds ?? undefined,
+  });
   const total = totalRekap(baris);
   const [rincianFee, kunci] = await Promise.all([
-    rincianFeePeriode({ ...rentang, departmentId }),
+    rincianFeePeriode({
+      ...rentang,
+      departmentId,
+      locationIds: lingkup.locationIds ?? undefined,
+    }),
     kunciPeriode(rentang.mulai, rentang.akhir),
   ]);
 

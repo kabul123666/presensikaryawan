@@ -48,6 +48,7 @@ export default async function HalamanDetailAbsensi({
       jabatan: positions.nama,
       departemen: departments.nama,
       departmentId: employees.departmentId,
+      locationId: employees.locationId,
     })
     .from(employees)
     .innerJoin(users, eq(users.id, employees.userId))
@@ -58,9 +59,19 @@ export default async function HalamanDetailAbsensi({
 
   if (!karyawan) notFound();
 
-  // Manager hanya boleh membuka anggota departemennya sendiri.
-  const lingkup = lingkupData(pengguna);
-  if (!lingkup.semua && karyawan.departmentId !== lingkup.departmentId) {
+  /*
+   * Kepala unit hanya boleh membuka anggota departemennya sendiri, pemilik
+   * hanya karyawan cabang miliknya. Diperiksa di server, bukan sekadar
+   * disembunyikan dari daftar.
+   */
+  const lingkup = await lingkupData(pengguna);
+  const diLuarDepartemen =
+    lingkup.departmentId !== null && karyawan.departmentId !== lingkup.departmentId;
+  const diLuarCabang =
+    lingkup.locationIds !== null &&
+    (karyawan.locationId === null || !lingkup.locationIds.includes(karyawan.locationId));
+
+  if (!lingkup.semua && (diLuarDepartemen || diLuarCabang)) {
     redirect("/tidak-berwenang");
   }
 

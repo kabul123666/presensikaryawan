@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, gte, isNull, lte, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, ne, sql, notInArray } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import {
@@ -11,6 +11,7 @@ import {
   requests,
   users,
 } from "@/db/schema";
+import { PERAN_TANPA_ABSEN } from "@/lib/auth/session";
 import { geserTanggal, tanggalWIB } from "@/lib/waktu";
 
 /** Angka-angka utama untuk kartu ringkasan dashboard. */
@@ -26,7 +27,7 @@ export async function ringkasanHariIni(tanggal = tanggalWIB()) {
         eq(employees.aktif, true),
         eq(employees.wajibAbsen, true),
         eq(users.status, "ACTIVE"),
-        eq(employees.wajibAbsen, true),
+        notInArray(users.role, PERAN_TANPA_ABSEN),
       ),
     );
 
@@ -117,6 +118,9 @@ export async function belumAbsen(tanggal = tanggalWIB()) {
         eq(employees.aktif, true),
         eq(employees.wajibAbsen, true),
         eq(users.status, "ACTIVE"),
+        // Pemilik dan pengelola sistem bukan staf terjadwal; menagih kehadiran
+        // mereka hanya membuat daftar "belum absen" tidak pernah kosong.
+        notInArray(users.role, PERAN_TANPA_ABSEN),
         sql`${employees.id} not in ${sudah}`,
       ),
     )

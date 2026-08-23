@@ -50,6 +50,14 @@ lagi.
 5. **Vercel Hobby melarang pemakaian komersial.** Untuk dipakai operasional
    sungguhan, paketnya perlu dinaikkan ke Pro.
 
+## Batas cabang pemilik — baru sebagian
+
+Penyaringan per cabang untuk peran Pemilik sudah berlaku di **rekap absensi**
+(layar, halaman rincian per karyawan, dan berkas unduhan termasuk rincian fee).
+Yang **belum** disaring per cabang: dashboard, daftar karyawan, antrean
+persetujuan, dan tinjau anomali — semuanya masih menampilkan seluruh jaringan.
+Kerjakan sebelum ada pemilik cabang tunggal yang benar-benar dipakai.
+
 ## Belum sempat diperiksa langsung
 
 Tiga fitur admin di bawah ini lolos typecheck, lint, dan `next build`, tetapi
@@ -69,6 +77,14 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
   atas permintaan pemilik. Pembatasan dilakukan pemilik lewat Pengaturan → Hak
   Akses Menu, bukan dipaksakan kode. Perlu disadari: bawaan ini berarti kepala
   unit bisa membuka Pengaturan dan Audit Log.
+- **Peran Pemilik (`OWNER`) dibatasi per cabang, bukan per departemen.**
+  Cabang haknya diambil dari penempatan ditambah penugasan lintas cabang —
+  mekanisme yang sama dengan "di mana seseorang boleh absen" — jadi pemilik
+  seluruh jaringan cukup ditugaskan ke semua cabang tanpa tabel baru. Pemilik
+  yang mencakup seluruh cabang aktif otomatis dianggap tidak terbatas.
+- **Pemilik, admin, dan super admin tidak pernah dituntut hadir**
+  (`PERAN_TANPA_ABSEN`). Mereka dikeluarkan dari hitungan "belum absen",
+  jumlah karyawan wajib absen, dan perhitungan alpa.
 - **WFH bukan pengajuan.** Ia kewenangan yang melekat pada peran Kepala Unit —
   boleh absen dari luar area, foto tetap wajib, hari itu ditandai `WFH`.
 

@@ -41,6 +41,7 @@ const LABEL_STATUS: Record<
 const LABEL_PERAN: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
   ADMIN: "Admin / HRD",
+  OWNER: "Pemilik",
   MANAGER: "Kepala Unit",
   KARYAWAN: "Karyawan",
 };
@@ -193,6 +194,7 @@ function FormKaryawan({
           <Select id="role" name="role" defaultValue={karyawan?.role ?? "KARYAWAN"}>
             <option value="KARYAWAN">Karyawan</option>
             <option value="MANAGER">Kepala Unit</option>
+            <option value="OWNER">Pemilik</option>
             <option value="ADMIN">Admin / HRD</option>
           </Select>
         </div>

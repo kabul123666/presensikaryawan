@@ -21,7 +21,12 @@ export async function wajibAksesMenu(kunci: string): Promise<PenggunaSesi> {
   if (pengguna.role === "SUPER_ADMIN") return pengguna;
 
   const akses = await bacaPengaturan("akses_menu");
-  const daftar = pengguna.role === "ADMIN" ? akses.ADMIN : akses.MANAGER;
+  const daftar =
+    pengguna.role === "ADMIN"
+      ? akses.ADMIN
+      : pengguna.role === "OWNER"
+        ? akses.OWNER
+        : akses.MANAGER;
 
   if (!daftar.includes(kunci)) redirect("/tidak-berwenang");
   return pengguna;
@@ -35,5 +40,9 @@ export async function aksesMenuPengguna(pengguna: PenggunaSesi): Promise<string[
   if (pengguna.role === "SUPER_ADMIN") return [...SEMUA_KUNCI_MENU];
 
   const akses = await bacaPengaturan("akses_menu");
-  return pengguna.role === "ADMIN" ? akses.ADMIN : akses.MANAGER;
+  return pengguna.role === "ADMIN"
+    ? akses.ADMIN
+    : pengguna.role === "OWNER"
+      ? akses.OWNER
+      : akses.MANAGER;
 }

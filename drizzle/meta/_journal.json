@@ -50,6 +50,13 @@
       "when": 1787437879652,
       "tag": "0006_slim_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787460928588,
+      "tag": "0007_right_mister_sinister",
+      "breakpoints": true
     }
   ]
 }
