@@ -32,7 +32,10 @@ const MENU: Tujuan[] = [
   { href: "/admin/absensi", label: "Rekap", Ikon: CalendarRange },
   { href: "/admin/persetujuan", label: "Setujui", Ikon: ClipboardCheck },
   { href: "/admin/karyawan", label: "Karyawan", Ikon: Users },
-  { href: "/admin/menu", label: "Menu", Ikon: LayoutGrid },
+  // Menunya satu untuk semuanya: petak berwarna di aplikasi karyawan, sudah
+  // memuat modul admin sesuai izin. Tidak perlu daftar kedua yang berbeda
+  // rupa hanya karena dibuka dari panel admin.
+  { href: "/menu", label: "Menu", Ikon: LayoutGrid },
 ];
 
 export function NavBawahAdmin({ menunggu }: { menunggu: number }) {

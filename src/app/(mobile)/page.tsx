@@ -9,9 +9,10 @@ import { announcements, employees } from "@/db/schema";
 import { MenuUtama } from "@/components/mobile/menu-aplikasi";
 import { absensiAktif, shiftBerlaku } from "@/features/attendance/service";
 import { cabangKaryawan, labelCabang } from "@/features/employees/service";
+import { aksesMenuPengguna } from "@/lib/auth/akses";
 import { jumlahBelumDibaca } from "@/features/notifications/service";
 import { bacaPengaturan } from "@/features/settings/service";
-import { wajibMasuk } from "@/lib/auth/session";
+import { PERAN_PENYETUJU, wajibMasuk } from "@/lib/auth/session";
 import { formatDurasi } from "@/lib/utils";
 import { jamWIB, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
@@ -39,6 +40,9 @@ export default async function BerandaKaryawan() {
 
   const belumDibaca = await jumlahBelumDibaca(pengguna.userId);
   const cabang = labelCabang(await cabangKaryawan(pengguna.employeeId));
+  const izinAdmin = PERAN_PENYETUJU.includes(pengguna.role)
+    ? await aksesMenuPengguna(pengguna)
+    : [];
 
   const [pengumuman] = await db
     .select()
@@ -164,6 +168,7 @@ export default async function BerandaKaryawan() {
           <MenuUtama
             pilihan={karyawan?.menuBeranda}
             kepalaUnit={pengguna.role === "MANAGER"}
+            izinAdmin={izinAdmin}
           />
         </div>
 

@@ -344,3 +344,131 @@ export function IconBeranda(props: IkonProps) {
     </Bingkai>
   );
 }
+
+/* ============================ Modul panel admin ============================ */
+
+/** Papan angka — dashboard admin. */
+export function IconDashboard(props: IkonProps) {
+  const p = PALET.teal;
+  return (
+    <Bingkai {...props} palet={p}>
+      <rect x="14" y="14" width="17" height="21" rx="5" fill={p.utama} />
+      <rect x="35" y="14" width="15" height="13" rx="5" fill={p.tua} />
+      <rect x="14" y="39" width="17" height="11" rx="5" fill={p.tua} />
+      <rect x="35" y="31" width="15" height="19" rx="5" fill={p.utama} />
+    </Bingkai>
+  );
+}
+
+/** Perisai bertanda seru — antrean tinjau anomali. */
+export function IconAnomali(props: IkonProps) {
+  const p = PALET.rose;
+  return (
+    <Bingkai {...props} palet={p}>
+      <path
+        d="M32 12l16 6.2v13.3C48 42.6 41 50 32 53c-9-3-16-10.4-16-21.5V18.2z"
+        fill={p.utama}
+      />
+      <rect x="29.6" y="24" width="4.8" height="12" rx="2.4" fill="#FFFFFF" />
+      <circle cx="32" cy="41" r="2.8" fill="#FFFFFF" />
+    </Bingkai>
+  );
+}
+
+/** Corong — pengumuman untuk seluruh karyawan. */
+export function IconPengumuman(props: IkonProps) {
+  const p = PALET.amber;
+  return (
+    <Bingkai {...props} palet={p}>
+      <path d="M44 16v32L24 40v-16z" fill={p.utama} />
+      <rect x="13" y="24" width="12" height="16" rx="4" fill={p.tua} />
+      <path d="M18 40h6l2 10h-6z" fill={p.tua} />
+    </Bingkai>
+  );
+}
+
+/** Gedung berjenjang — departemen dan jabatan. */
+export function IconOrganisasi(props: IkonProps) {
+  const p = PALET.sky;
+  return (
+    <Bingkai {...props} palet={p}>
+      <rect x="14" y="24" width="17" height="26" rx="4" fill={p.tua} />
+      <rect x="33" y="14" width="17" height="36" rx="4" fill={p.utama} />
+      <rect x="19" y="30" width="7" height="5" rx="1.6" fill="#FFFFFF" />
+      <rect x="19" y="39" width="7" height="5" rx="1.6" fill="#FFFFFF" />
+      <rect x="38" y="21" width="7" height="5" rx="1.6" fill="#FFFFFF" />
+      <rect x="38" y="30" width="7" height="5" rx="1.6" fill="#FFFFFF" />
+      <rect x="38" y="39" width="7" height="5" rx="1.6" fill="#FFFFFF" />
+    </Bingkai>
+  );
+}
+
+/** Kalender berpetak — jadwal jaga bulanan. */
+export function IconJadwal(props: IkonProps) {
+  const p = PALET.indigo;
+  return (
+    <Bingkai {...props} palet={p}>
+      <rect x="14" y="18" width="36" height="32" rx="6" fill={p.utama} />
+      <rect x="14" y="18" width="36" height="9" rx="6" fill={p.tua} />
+      <rect x="21" y="13" width="4" height="9" rx="2" fill={p.tua} />
+      <rect x="39" y="13" width="4" height="9" rx="2" fill={p.tua} />
+      <rect x="20" y="32" width="7" height="6" rx="2" fill="#FFFFFF" />
+      <rect x="30.5" y="32" width="7" height="6" rx="2" fill="#FFFFFF" />
+      <rect x="41" y="32" width="7" height="6" rx="2" fill="#FFFFFF" />
+      <rect x="20" y="41" width="7" height="6" rx="2" fill="#FFFFFF" />
+      <rect x="30.5" y="41" width="7" height="6" rx="2" fill="#FFFFFF" />
+    </Bingkai>
+  );
+}
+
+/** Jam berpanah putar — pengaturan shift. */
+export function IconShift(props: IkonProps) {
+  const p = PALET.slate;
+  return (
+    <Bingkai {...props} palet={p}>
+      <circle cx="32" cy="33" r="15" fill={p.utama} />
+      <path
+        d="M32 24v9.5l6.5 4.5"
+        stroke="#FFFFFF"
+        strokeWidth="3.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M46 18v8h-8"
+        stroke={p.tua}
+        strokeWidth="3.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Bingkai>
+  );
+}
+
+/** Roda gigi — pengaturan sistem. */
+export function IconPengaturan(props: IkonProps) {
+  const p = PALET.slate;
+  return (
+    <Bingkai {...props} palet={p}>
+      <path
+        d="M28.4 13h7.2l1.2 5.4 4 2.3 5.2-1.8 3.6 6.2-4 3.7v4.6l4 3.7-3.6 6.2-5.2-1.8-4 2.3L35.6 51h-7.2l-1.2-5.4-4-2.3-5.2 1.8-3.6-6.2 4-3.7v-4.6l-4-3.7 3.6-6.2 5.2 1.8 4-2.3z"
+        fill={p.utama}
+      />
+      <circle cx="32" cy="32" r="7.5" fill="#FFFFFF" />
+      <circle cx="32" cy="32" r="3.6" fill={p.tua} />
+    </Bingkai>
+  );
+}
+
+/** Gulungan bergaris — jejak audit. */
+export function IconAudit(props: IkonProps) {
+  const p = PALET.indigo;
+  return (
+    <Bingkai {...props} palet={p}>
+      <rect x="15" y="13" width="34" height="38" rx="6" fill={p.utama} />
+      <rect x="22" y="22" width="20" height="4" rx="2" fill="#FFFFFF" />
+      <rect x="22" y="30" width="20" height="4" rx="2" fill="#FFFFFF" />
+      <rect x="22" y="38" width="12" height="4" rx="2" fill="#FFFFFF" />
+    </Bingkai>
+  );
+}

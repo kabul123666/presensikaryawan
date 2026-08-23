@@ -2,7 +2,15 @@ import Link from "next/link";
 import { LayoutGrid } from "lucide-react";
 
 import {
+  IconAnomali,
   IconApproval,
+  IconAudit,
+  IconDashboard,
+  IconJadwal,
+  IconOrganisasi,
+  IconPengaturan,
+  IconPengumuman,
+  IconShift,
   IconCuti,
   IconFee,
   IconKamera,
@@ -28,6 +36,11 @@ type Menu = {
   penyetuju?: boolean;
   /** Hanya tampil bagi kepala unit. */
   kepalaUnit?: boolean;
+  /**
+   * Modul panel admin. Nilainya kunci hak akses; petaknya hanya tampil bila
+   * kunci itu ada pada izin pengguna (lihat Pengaturan → Hak Akses Menu).
+   */
+  admin?: string;
   /** Ikut tampil di beranda; sisanya hanya ada di halaman Lainnya. */
   utama?: boolean;
 };
@@ -100,13 +113,6 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
         Ikon: IconBeranda,
         kepalaUnit: true,
       },
-      {
-        kunci: "persetujuan",
-        label: "Persetujuan",
-        href: "/admin/persetujuan",
-        Ikon: IconApproval,
-        penyetuju: true,
-      },
     ],
   },
   {
@@ -123,6 +129,112 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
       { kunci: "bonus", label: "Bonus", Ikon: IconFee },
       { kunci: "slip-gaji", label: "Slip Gaji", Ikon: IconLaporan },
       { kunci: "perjalanan-dinas", label: "Perjalanan Dinas", Ikon: IconLokasi },
+    ],
+  },
+  {
+    judul: "Pemantauan",
+    menu: [
+      {
+        kunci: "adm-dashboard",
+        label: "Dashboard",
+        href: "/admin",
+        Ikon: IconDashboard,
+        admin: "dashboard",
+      },
+      {
+        kunci: "adm-absensi",
+        label: "Rekap Absensi",
+        href: "/admin/absensi",
+        Ikon: IconLaporan,
+        admin: "absensi",
+      },
+      {
+        kunci: "adm-anomali",
+        label: "Tinjau Anomali",
+        href: "/admin/anomali",
+        Ikon: IconAnomali,
+        admin: "anomali",
+      },
+      {
+        kunci: "adm-persetujuan",
+        label: "Persetujuan",
+        href: "/admin/persetujuan",
+        Ikon: IconApproval,
+        admin: "persetujuan",
+      },
+      {
+        kunci: "adm-tindakan",
+        label: "Tindakan & Fee",
+        href: "/admin/tindakan",
+        Ikon: IconTindakan,
+        admin: "tindakan",
+      },
+      {
+        kunci: "adm-pengumuman",
+        label: "Pengumuman",
+        href: "/admin/pengumuman",
+        Ikon: IconPengumuman,
+        admin: "pengumuman",
+      },
+    ],
+  },
+  {
+    judul: "Kepegawaian",
+    menu: [
+      {
+        kunci: "adm-karyawan",
+        label: "Karyawan",
+        href: "/admin/karyawan",
+        Ikon: IconKaryawan,
+        admin: "karyawan",
+      },
+      {
+        kunci: "adm-organisasi",
+        label: "Departemen",
+        href: "/admin/organisasi",
+        Ikon: IconOrganisasi,
+        admin: "organisasi",
+      },
+      {
+        kunci: "adm-jadwal",
+        label: "Jadwal Jaga",
+        href: "/admin/jadwal",
+        Ikon: IconJadwal,
+        admin: "jadwal",
+      },
+      {
+        kunci: "adm-shift",
+        label: "Shift",
+        href: "/admin/shift",
+        Ikon: IconShift,
+        admin: "shift",
+      },
+      {
+        kunci: "adm-lokasi",
+        label: "Lokasi",
+        href: "/admin/lokasi",
+        Ikon: IconLokasi,
+        admin: "lokasi",
+      },
+    ],
+  },
+  {
+    judul: "Sistem",
+    menu: [
+      {
+        kunci: "adm-pengaturan",
+        label: "Pengaturan",
+        href: "/admin/pengaturan",
+        Ikon: IconPengaturan,
+        admin: "pengaturan",
+      },
+      {
+        kunci: "adm-audit",
+        label: "Audit Log",
+        href: "/admin/audit",
+        Ikon: IconAudit,
+        admin: "audit",
+      },
     ],
   },
   {
@@ -201,9 +313,12 @@ export const MENU_BAWAAN = SEMUA_MENU.filter((m) => m.utama).map((m) => m.kunci)
 export function MenuUtama({
   pilihan,
   kepalaUnit = false,
+  izinAdmin = [],
 }: {
   pilihan?: string[] | null;
   kepalaUnit?: boolean;
+  /** Kunci modul admin yang boleh dibuka pengguna ini. */
+  izinAdmin?: string[];
 }) {
   const dipilih = pilihan?.length ? pilihan : MENU_BAWAAN;
 
@@ -213,6 +328,7 @@ export function MenuUtama({
     .map((k) => SEMUA_MENU.find((m) => m.kunci === k))
     .filter((m): m is Menu => Boolean(m))
     .filter((m) => !m.kepalaUnit || kepalaUnit)
+    .filter((m) => !m.admin || izinAdmin.includes(m.admin))
     .slice(0, 7);
 
   return (
@@ -250,15 +366,20 @@ export function MenuUtama({
 export function MenuAplikasi({
   penyetuju,
   kepalaUnit,
+  izinAdmin = [],
 }: {
   penyetuju: boolean;
   kepalaUnit: boolean;
+  izinAdmin?: string[];
 }) {
   return (
     <div className="mt-6 space-y-6 px-5 lg:mt-5 lg:px-0">
       {KELOMPOK.map((k) => {
         const menu = k.menu.filter(
-          (m) => (!m.penyetuju || penyetuju) && (!m.kepalaUnit || kepalaUnit),
+          (m) =>
+            (!m.penyetuju || penyetuju) &&
+            (!m.kepalaUnit || kepalaUnit) &&
+            (!m.admin || izinAdmin.includes(m.admin)),
         );
         if (menu.length === 0) return null;
 

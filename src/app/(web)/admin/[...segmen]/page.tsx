@@ -17,12 +17,11 @@ export default async function HalamanTidakDikenal() {
         <div className="bg-surface-muted mx-auto grid size-16 place-items-center rounded-full">
           <FileQuestion className="text-subtle" size={30} />
         </div>
-        <h1 className="text-body mt-5 text-xl font-extrabold tracking-tight">
+        <h1 className="text-body mt-5 text-xl font-bold tracking-tight">
           Halaman tidak ditemukan
         </h1>
         <p className="text-muted mt-3 text-[15px] leading-relaxed">
-          Alamat yang Anda buka tidak dikenali. Gunakan menu di samping untuk berpindah
-          modul.
+          Alamat yang Anda buka tidak dikenali. Gunakan menu untuk berpindah modul.
         </p>
         <Link
           href="/admin"
