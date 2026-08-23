@@ -12,6 +12,7 @@ import {
   type BarisTampil,
 } from "@/features/approval/tabel-persetujuan";
 import { wajibAksesMenu } from "@/lib/auth/akses";
+import { lingkupData } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 import { tanggalWIB } from "@/lib/waktu";
 
@@ -30,14 +31,17 @@ export default async function HalamanPersetujuan({
   searchParams: Promise<{ status?: string }>;
 }) {
   const pengguna = await wajibAksesMenu("persetujuan");
+
+  // Pemilik klinik hanya melihat pengajuan dari cabangnya.
+  const lingkup = await lingkupData(pengguna);
   const sp = await searchParams;
 
   const status = (TAB.find((t) => t.nilai === sp.status)?.nilai ?? "PENDING") as
     RequestStatus | "SEMUA";
 
   const [daftar, hitung, ringkas, jenisCuti] = await Promise.all([
-    daftarPengajuan(status),
-    hitungPerStatus(),
+    daftarPengajuan(status, lingkup.locationIds),
+    hitungPerStatus(lingkup.locationIds),
     ringkasanAntrean(),
     petaJenisCuti(),
   ]);

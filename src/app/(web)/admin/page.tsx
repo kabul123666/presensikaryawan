@@ -14,6 +14,7 @@ import {
 } from "@/features/admin/service";
 import { LABEL_FLAG } from "@/features/admin/tabel-anomali";
 import { wajibAksesMenu } from "@/lib/auth/akses";
+import { lingkupData } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 import { jamWIB, tanggalPanjang, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
@@ -92,17 +93,21 @@ function Panel({
 }
 
 export default async function HalamanDashboard() {
-  await wajibAksesMenu("dashboard");
+  const pengguna = await wajibAksesMenu("dashboard");
+
+  // Pemilik klinik hanya melihat cabangnya; peran lain tidak dibatasi cabang.
+  const lingkup = await lingkupData(pengguna);
+  const cabang = lingkup.locationIds;
   const hariIni = tanggalWIB();
 
   const [ringkas, feed, tren, antrean, pendaftaran, tinjau, belum] = await Promise.all([
-    ringkasanHariIni(hariIni),
-    absensiHariIni(hariIni),
-    trenKehadiran(14),
-    antreanPersetujuan(5),
+    ringkasanHariIni(hariIni, cabang),
+    absensiHariIni(hariIni, 25, cabang),
+    trenKehadiran(14, cabang),
+    antreanPersetujuan(5, cabang),
     antreanPendaftaran(),
-    perluDitinjau(5),
-    belumAbsen(hariIni),
+    perluDitinjau(5, cabang),
+    belumAbsen(hariIni, cabang),
   ]);
 
   const maksTren = Math.max(1, ...tren.map((t) => t.hadir));

@@ -32,6 +32,8 @@ export type FilterKaryawan = {
   cari?: string;
   departmentId?: string;
   status?: UserStatus | "SEMUA";
+  /** Batas cabang milik pemilik klinik; kosong berarti seluruh jaringan. */
+  locationIds?: string[];
 };
 
 export type BarisKaryawan = {
@@ -69,6 +71,9 @@ export async function daftarKaryawan(filter: FilterKaryawan = {}) {
     if (cocok) syarat.push(cocok);
   }
   if (filter.departmentId) syarat.push(eq(employees.departmentId, filter.departmentId));
+  if (filter.locationIds?.length) {
+    syarat.push(inArray(employees.locationId, filter.locationIds));
+  }
   if (filter.status && filter.status !== "SEMUA") {
     syarat.push(eq(users.status, filter.status));
   }
@@ -128,12 +133,13 @@ export async function daftarKaryawan(filter: FilterKaryawan = {}) {
 }
 
 /** Jumlah karyawan per status untuk tab penyaring. */
-export async function hitungStatusKaryawan() {
+export async function hitungStatusKaryawan(locationIds?: string[]) {
   const db = await getDb();
   const baris = await db
     .select({ status: users.status, jumlah: count() })
     .from(users)
     .innerJoin(employees, eq(employees.userId, users.id))
+    .where(locationIds?.length ? inArray(employees.locationId, locationIds) : undefined)
     .groupBy(users.status);
 
   const hitung: Record<string, number> = {
@@ -196,7 +202,7 @@ export async function opsiFormulir() {
 }
 
 /** Statistik ringkas untuk kepala halaman. */
-export async function ringkasanKaryawan() {
+export async function ringkasanKaryawan(locationIds?: string[]) {
   const db = await getDb();
   const [row] = await db
     .select({
@@ -207,7 +213,12 @@ export async function ringkasanKaryawan() {
     })
     .from(users)
     .innerJoin(employees, eq(employees.userId, users.id))
-    .where(ne(users.status, "REJECTED"));
+    .where(
+      and(
+        ne(users.status, "REJECTED"),
+        ...(locationIds?.length ? [inArray(employees.locationId, locationIds)] : []),
+      ),
+    );
 
   return {
     total: Number(row?.total ?? 0),

@@ -55,8 +55,16 @@ export type BarisPengajuan = {
 };
 
 /** Daftar pengajuan beserta identitas pengaju. */
-export async function daftarPengajuan(status: RequestStatus | "SEMUA" = "PENDING") {
+export async function daftarPengajuan(
+  status: RequestStatus | "SEMUA" = "PENDING",
+  locationIds?: string[] | null,
+) {
   const db = await getDb();
+
+  // Pemilik klinik hanya melihat pengajuan dari cabangnya.
+  const batasCabang = locationIds?.length
+    ? [inArray(employees.locationId, locationIds)]
+    : [];
 
   const kueri = db
     .select({
@@ -83,16 +91,24 @@ export async function daftarPengajuan(status: RequestStatus | "SEMUA" = "PENDING
     .orderBy(desc(requests.createdAt))
     .limit(100);
 
-  const baris =
-    status === "SEMUA" ? await kueri : await kueri.where(eq(requests.status, status));
+  const syarat = [
+    ...(status === "SEMUA" ? [] : [eq(requests.status, status)]),
+    ...batasCabang,
+  ];
+
+  const baris = syarat.length > 0 ? await kueri.where(and(...syarat)) : await kueri;
 
   return baris as BarisPengajuan[];
 }
 
 /** Jumlah pengajuan per status, untuk tab penyaring. */
-export async function hitungPerStatus() {
+export async function hitungPerStatus(locationIds?: string[] | null) {
   const db = await getDb();
-  const semua = await db.select({ status: requests.status }).from(requests);
+  const semua = await db
+    .select({ status: requests.status })
+    .from(requests)
+    .innerJoin(employees, eq(employees.id, requests.employeeId))
+    .where(locationIds?.length ? inArray(employees.locationId, locationIds) : undefined);
 
   const hitung: Record<string, number> = {
     PENDING: 0,

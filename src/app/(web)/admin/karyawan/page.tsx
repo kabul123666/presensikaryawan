@@ -9,6 +9,7 @@ import {
   ringkasanKaryawan,
 } from "@/features/employees/service";
 import { wajibAksesMenu } from "@/lib/auth/akses";
+import { lingkupData } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 import { tanggalWIB } from "@/lib/waktu";
 
@@ -26,16 +27,25 @@ export default async function HalamanKaryawan({
 }: {
   searchParams: Promise<{ status?: string; cari?: string; dept?: string }>;
 }) {
-  await wajibAksesMenu("karyawan");
+  const pengguna = await wajibAksesMenu("karyawan");
+
+  // Pemilik klinik hanya melihat karyawan cabangnya.
+  const lingkup = await lingkupData(pengguna);
+  const cabang = lingkup.locationIds ?? undefined;
   const sp = await searchParams;
 
   const status = (TAB.find((t) => t.nilai === sp.status)?.nilai ?? "SEMUA") as
     UserStatus | "SEMUA";
 
   const [daftar, hitung, ringkas, opsi, pendaftaran] = await Promise.all([
-    daftarKaryawan({ cari: sp.cari, departmentId: sp.dept, status }),
-    hitungStatusKaryawan(),
-    ringkasanKaryawan(),
+    daftarKaryawan({
+      cari: sp.cari,
+      departmentId: sp.dept,
+      status,
+      locationIds: cabang,
+    }),
+    hitungStatusKaryawan(cabang),
+    ringkasanKaryawan(cabang),
     opsiFormulir(),
     antreanPendaftaranBaru(),
   ]);

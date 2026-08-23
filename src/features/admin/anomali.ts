@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import { attendances, departments, employees, users } from "@/db/schema";
@@ -30,12 +30,17 @@ function syaratAnomali() {
   return sql`((${attendances.flags} - 'WFH') <> '[]'::jsonb or (${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null and ${attendances.tanggal} < ${tanggalWIB()}))`;
 }
 
-export async function daftarAnomali(saringan: SaringanAnomali = "BELUM", batas = 100) {
+export async function daftarAnomali(
+  saringan: SaringanAnomali = "BELUM",
+  batas = 100,
+  locationIds?: string[] | null,
+) {
   const db = await getDb();
 
   const syarat = [syaratAnomali()];
   if (saringan === "BELUM") syarat.push(isNull(attendances.ditinjauAt));
   if (saringan === "SUDAH") syarat.push(isNotNull(attendances.ditinjauAt));
+  if (locationIds?.length) syarat.push(inArray(employees.locationId, locationIds));
 
   return db
     .select({
@@ -64,7 +69,7 @@ export async function daftarAnomali(saringan: SaringanAnomali = "BELUM", batas =
 }
 
 /** Jumlah per saringan, untuk tab dan lencana di sidebar. */
-export async function hitungAnomali() {
+export async function hitungAnomali(locationIds?: string[] | null) {
   const db = await getDb();
   const [row] = await db
     .select({
@@ -73,7 +78,13 @@ export async function hitungAnomali() {
       semua: sql<number>`count(*)`,
     })
     .from(attendances)
-    .where(syaratAnomali());
+    .innerJoin(employees, eq(employees.id, attendances.employeeId))
+    .where(
+      and(
+        syaratAnomali(),
+        ...(locationIds?.length ? [inArray(employees.locationId, locationIds)] : []),
+      ),
+    );
 
   return {
     BELUM: Number(row?.belum ?? 0),

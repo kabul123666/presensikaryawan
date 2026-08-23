@@ -50,14 +50,6 @@ lagi.
 5. **Vercel Hobby melarang pemakaian komersial.** Untuk dipakai operasional
    sungguhan, paketnya perlu dinaikkan ke Pro.
 
-## Batas cabang pemilik — baru sebagian
-
-Penyaringan per cabang untuk peran Pemilik sudah berlaku di **rekap absensi**
-(layar, halaman rincian per karyawan, dan berkas unduhan termasuk rincian fee).
-Yang **belum** disaring per cabang: dashboard, daftar karyawan, antrean
-persetujuan, dan tinjau anomali — semuanya masih menampilkan seluruh jaringan.
-Kerjakan sebelum ada pemilik cabang tunggal yang benar-benar dipakai.
-
 ## Belum sempat diperiksa langsung
 
 Tiga fitur admin di bawah ini lolos typecheck, lint, dan `next build`, tetapi
@@ -78,6 +70,10 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
   Akses Menu, bukan dipaksakan kode. Perlu disadari: bawaan ini berarti kepala
   unit bisa membuka Pengaturan dan Audit Log.
 - **Peran Pemilik (`OWNER`) dibatasi per cabang, bukan per departemen.**
+  Batasnya berlaku di dashboard, rekap absensi (layar, rincian, unduhan),
+  daftar karyawan, antrean persetujuan, dan tinjau anomali. Layar admin baru
+  yang menampilkan data karyawan wajib ikut menyaring lewat
+  `lingkupData().locationIds`.
   Cabang haknya diambil dari penempatan ditambah penugasan lintas cabang —
   mekanisme yang sama dengan "di mana seseorang boleh absen" — jadi pemilik
   seluruh jaringan cukup ditugaskan ke semua cabang tanpa tabel baru. Pemilik
@@ -123,6 +119,11 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
   membacanya dari aturan — akibatnya aturan berjenjang tersimpan rapi tapi
   tidak pernah berlaku. Setiap tempat baru yang membuat baris `requests` wajib
   memanggilnya.
+- **Jangan menerapkan perubahan skema manual ke produksi.** Nilai enum `OWNER`
+  sempat diterapkan lewat skrip, lalu migrasi Drizzle yang sama menabraknya
+  dengan "enum label already exists" dan seluruh penyebaran Vercel batal.
+  Migrasi penambahan nilai enum kini ditulis `ADD VALUE IF NOT EXISTS`; kalau
+  terpaksa menerapkan manual, tulis migrasinya idempoten sejak awal.
 - **Jangan pakai `position: fixed` untuk bilah menu di ponsel.** Bilah alamat
   peramban yang menciut saat digulir ikut menggesernya, sehingga menunya
   terlihat naik-turun bahkan hilang di bawah lipatan. Pola yang dipakai

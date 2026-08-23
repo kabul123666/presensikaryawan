@@ -7,6 +7,7 @@ import {
 } from "@/features/admin/anomali";
 import { TabelAnomali, type BarisAnomali } from "@/features/admin/tabel-anomali";
 import { wajibAksesMenu } from "@/lib/auth/akses";
+import { lingkupData } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Tinjau Anomali" };
@@ -29,14 +30,20 @@ export default async function HalamanAnomali({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  await wajibAksesMenu("anomali");
+  const pengguna = await wajibAksesMenu("anomali");
+
+  // Pemilik klinik hanya meninjau absensi cabangnya.
+  const lingkup = await lingkupData(pengguna);
   const sp = await searchParams;
 
   const saringan: SaringanAnomali = TAB.some((t) => t.nilai === sp.status)
     ? (sp.status as SaringanAnomali)
     : "BELUM";
 
-  const [baris, hitung] = await Promise.all([daftarAnomali(saringan), hitungAnomali()]);
+  const [baris, hitung] = await Promise.all([
+    daftarAnomali(saringan, 100, lingkup.locationIds),
+    hitungAnomali(lingkup.locationIds),
+  ]);
 
   return (
     <div className="space-y-6">

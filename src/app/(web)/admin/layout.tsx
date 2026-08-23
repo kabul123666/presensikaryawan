@@ -6,7 +6,7 @@ import { SidebarAdmin } from "@/components/web/sidebar-admin";
 import { TopbarAdmin } from "@/components/web/topbar-admin";
 import { ringkasanHariIni } from "@/features/admin/service";
 import { aksesMenuPengguna } from "@/lib/auth/akses";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 
 /**
  * Kerangka modul admin.
@@ -26,7 +26,8 @@ import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const pengguna = await wajibPeran(...PERAN_PENYETUJU);
-  const ringkas = await ringkasanHariIni();
+  const lingkup = await lingkupData(pengguna);
+  const ringkas = await ringkasanHariIni(undefined, lingkup.locationIds);
   const izin = await aksesMenuPengguna(pengguna);
 
   return (

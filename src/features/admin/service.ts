@@ -1,6 +1,17 @@
 import "server-only";
 
-import { and, desc, eq, gte, isNull, lte, ne, sql, notInArray } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  lte,
+  ne,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import {
@@ -14,8 +25,23 @@ import {
 import { PERAN_TANPA_ABSEN } from "@/lib/auth/session";
 import { geserTanggal, tanggalWIB } from "@/lib/waktu";
 
+/**
+ * Batas cabang milik pemilik klinik.
+ *
+ * Dikembalikan sebagai potongan syarat agar tiap kueri cukup menyebarkannya,
+ * dan kosong bila pemakainya memang tidak dibatasi cabang. Kuerinya menyaring
+ * lewat `employees.location_id` — penempatan resmi seseorang — bukan cabang
+ * tempat ia kebetulan absen hari itu.
+ */
+function syaratCabang(locationIds?: string[] | null) {
+  return locationIds?.length ? [inArray(employees.locationId, locationIds)] : [];
+}
+
 /** Angka-angka utama untuk kartu ringkasan dashboard. */
-export async function ringkasanHariIni(tanggal = tanggalWIB()) {
+export async function ringkasanHariIni(
+  tanggal = tanggalWIB(),
+  locationIds?: string[] | null,
+) {
   const db = await getDb();
 
   const [karyawan] = await db
@@ -28,6 +54,7 @@ export async function ringkasanHariIni(tanggal = tanggalWIB()) {
         eq(employees.wajibAbsen, true),
         eq(users.status, "ACTIVE"),
         notInArray(users.role, PERAN_TANPA_ABSEN),
+        ...syaratCabang(locationIds),
       ),
     );
 
@@ -40,12 +67,14 @@ export async function ringkasanHariIni(tanggal = tanggalWIB()) {
       ditandai: sql<number>`count(*) filter (where jsonb_array_length(${attendances.flags}) > 0)`,
     })
     .from(attendances)
-    .where(eq(attendances.tanggal, tanggal));
+    .innerJoin(employees, eq(employees.id, attendances.employeeId))
+    .where(and(eq(attendances.tanggal, tanggal), ...syaratCabang(locationIds)));
 
   const [menunggu] = await db
     .select({ total: sql<number>`count(*)` })
     .from(requests)
-    .where(eq(requests.status, "PENDING"));
+    .innerJoin(employees, eq(employees.id, requests.employeeId))
+    .where(and(eq(requests.status, "PENDING"), ...syaratCabang(locationIds)));
 
   const [pendaftaran] = await db
     .select({ total: sql<number>`count(*)` })
@@ -69,7 +98,11 @@ export async function ringkasanHariIni(tanggal = tanggalWIB()) {
 }
 
 /** Aliran absensi hari ini untuk panel monitoring. */
-export async function absensiHariIni(tanggal = tanggalWIB(), batas = 25) {
+export async function absensiHariIni(
+  tanggal = tanggalWIB(),
+  batas = 25,
+  locationIds?: string[] | null,
+) {
   const db = await getDb();
   return db
     .select({
@@ -90,13 +123,13 @@ export async function absensiHariIni(tanggal = tanggalWIB(), batas = 25) {
     .innerJoin(employees, eq(employees.id, attendances.employeeId))
     .leftJoin(positions, eq(positions.id, employees.positionId))
     .leftJoin(departments, eq(departments.id, employees.departmentId))
-    .where(eq(attendances.tanggal, tanggal))
+    .where(and(eq(attendances.tanggal, tanggal), ...syaratCabang(locationIds)))
     .orderBy(desc(attendances.clockInAt))
     .limit(batas);
 }
 
 /** Karyawan aktif yang belum melakukan clock in hari ini. */
-export async function belumAbsen(tanggal = tanggalWIB()) {
+export async function belumAbsen(tanggal = tanggalWIB(), locationIds?: string[] | null) {
   const db = await getDb();
   const sudah = db
     .select({ id: attendances.employeeId })
@@ -121,6 +154,7 @@ export async function belumAbsen(tanggal = tanggalWIB()) {
         // Pemilik dan pengelola sistem bukan staf terjadwal; menagih kehadiran
         // mereka hanya membuat daftar "belum absen" tidak pernah kosong.
         notInArray(users.role, PERAN_TANPA_ABSEN),
+        ...syaratCabang(locationIds),
         sql`${employees.id} not in ${sudah}`,
       ),
     )
@@ -128,7 +162,7 @@ export async function belumAbsen(tanggal = tanggalWIB()) {
 }
 
 /** Tren kehadiran 14 hari terakhir untuk grafik batang. */
-export async function trenKehadiran(hari = 14) {
+export async function trenKehadiran(hari = 14, locationIds?: string[] | null) {
   const db = await getDb();
   const hariIni = tanggalWIB();
   const mulai = geserTanggal(hariIni, -(hari - 1));
@@ -140,7 +174,14 @@ export async function trenKehadiran(hari = 14) {
       terlambat: sql<number>`count(*) filter (where ${attendances.menitTerlambat} > 0)`,
     })
     .from(attendances)
-    .where(and(gte(attendances.tanggal, mulai), lte(attendances.tanggal, hariIni)))
+    .innerJoin(employees, eq(employees.id, attendances.employeeId))
+    .where(
+      and(
+        gte(attendances.tanggal, mulai),
+        lte(attendances.tanggal, hariIni),
+        ...syaratCabang(locationIds),
+      ),
+    )
     .groupBy(attendances.tanggal)
     .orderBy(attendances.tanggal);
 
@@ -157,7 +198,7 @@ export async function trenKehadiran(hari = 14) {
 }
 
 /** Antrean pengajuan yang menunggu keputusan. */
-export async function antreanPersetujuan(batas = 10) {
+export async function antreanPersetujuan(batas = 10, locationIds?: string[] | null) {
   const db = await getDb();
   return db
     .select({
@@ -173,7 +214,7 @@ export async function antreanPersetujuan(batas = 10) {
     .from(requests)
     .innerJoin(employees, eq(employees.id, requests.employeeId))
     .leftJoin(positions, eq(positions.id, employees.positionId))
-    .where(eq(requests.status, "PENDING"))
+    .where(and(eq(requests.status, "PENDING"), ...syaratCabang(locationIds)))
     .orderBy(desc(requests.createdAt))
     .limit(batas);
 }
@@ -226,7 +267,7 @@ export async function daftarKaryawan() {
 }
 
 /** Absensi yang perlu ditinjau: ditandai anomali atau belum di-clock out. */
-export async function perluDitinjau(batas = 10) {
+export async function perluDitinjau(batas = 10, locationIds?: string[] | null) {
   const db = await getDb();
   return db
     .select({
@@ -241,7 +282,12 @@ export async function perluDitinjau(batas = 10) {
     .from(attendances)
     .innerJoin(employees, eq(employees.id, attendances.employeeId))
     .where(
-      sql`jsonb_array_length(${attendances.flags}) > 0 or (${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null and ${attendances.tanggal} < ${tanggalWIB()})`,
+      and(
+        // Penanda WFH dikecualikan: kepala unit yang absen dari rumah memang
+        // sudah diizinkan, sama seperti di halaman Tinjau Anomali.
+        sql`((${attendances.flags} - 'WFH') <> '[]'::jsonb or (${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null and ${attendances.tanggal} < ${tanggalWIB()}))`,
+        ...syaratCabang(locationIds),
+      ),
     )
     .orderBy(desc(attendances.tanggal))
     .limit(batas);
