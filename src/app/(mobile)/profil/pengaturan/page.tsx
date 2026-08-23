@@ -16,7 +16,7 @@ import {
 
 import { PilihTema } from "@/components/mobile/pilih-tema";
 import { PilihWarna } from "@/components/mobile/pilih-warna";
-import { aksiKeluar } from "@/features/auth/actions";
+import { aksiKeluar, aksiKeluarSemuaPerangkat } from "@/features/auth/actions";
 import { FormGantiPassword } from "@/features/employees/form-ganti-password";
 import { wajibMasuk } from "@/lib/auth/session";
 
@@ -77,6 +77,26 @@ export default async function HalamanPengaturanAkun() {
           </div>
           <div className="mt-3">
             <FormGantiPassword />
+          </div>
+
+          <div className="border-app mt-4 border-t pt-4">
+            <div className="flex items-center gap-2.5">
+              <LogOut size={16} className="text-brand-600 dark:text-brand-300" />
+              <p className="text-body text-sm font-bold">Sesi perangkat</p>
+            </div>
+            <p className="text-muted mt-1 text-[12px] leading-relaxed">
+              Keluarkan akun Anda dari semua ponsel dan komputer yang masih terbuka —
+              termasuk yang Anda lupa tutup. Anda akan diminta masuk lagi di perangkat
+              ini.
+            </p>
+            <form action={aksiKeluarSemuaPerangkat} className="mt-3">
+              <button
+                type="submit"
+                className="border-app-strong text-body hover:bg-surface-muted flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-input)] border text-sm font-semibold transition-colors"
+              >
+                Keluar dari semua perangkat
+              </button>
+            </form>
           </div>
         </div>
       </section>

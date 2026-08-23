@@ -9,7 +9,6 @@ import { getDb } from "@/db/client";
 import {
   attendances,
   auditLogs,
-  employees,
   leaveBalances,
   notifications,
   requestApprovals,
@@ -146,15 +145,11 @@ async function terapkanPersetujuan(pengajuan: Pengajuan) {
       break;
     }
 
-    case "DEVICE_CHANGE": {
-      const sidik = typeof p.deviceFingerprint === "string" ? p.deviceFingerprint : null;
-      if (!sidik) break;
-      await db
-        .update(employees)
-        .set({ deviceFingerprint: sidik })
-        .where(eq(employees.id, pengajuan.employeeId));
+    case "DEVICE_CHANGE":
+      // Ikatan perangkat sudah dicabut dari aplikasi; jenis pengajuan ini
+      // tidak bisa dibuat lagi. Cabangnya disisakan supaya baris lama yang
+      // sudah telanjur ada tetap bisa diputuskan tanpa efek apa pun.
       break;
-    }
 
     case "OVERTIME":
       // Menit lembur sudah tercatat saat clock out; persetujuan hanya

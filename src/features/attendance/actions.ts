@@ -9,7 +9,6 @@ import { getDb } from "@/db/client";
 import {
   attendances,
   auditLogs,
-  employees,
   employeeLocations,
   locations,
   procedureCatalog,
@@ -50,7 +49,6 @@ const skemaPosisi = z.object({
   lng: z.coerce.number().min(-180).max(180),
   akurasi: z.coerce.number().min(0).max(100_000).nullable().catch(null),
   alasan: z.string().trim().max(500).optional(),
-  deviceFingerprint: z.string().trim().max(128).optional(),
   mockLocation: z
     .string()
     .optional()
@@ -260,24 +258,6 @@ export async function aksiClockIn(
     if (liburNasional && !flags.includes("HARI_LIBUR")) flags.push("HARI_LIBUR");
   }
 
-  const [karyawan] = await db
-    .select({ deviceFingerprint: employees.deviceFingerprint })
-    .from(employees)
-    .where(eq(employees.id, pengguna.employeeId))
-    .limit(1);
-
-  if (posisi.deviceFingerprint) {
-    if (!karyawan?.deviceFingerprint) {
-      // Perangkat pertama langsung diikat ke akun.
-      await db
-        .update(employees)
-        .set({ deviceFingerprint: posisi.deviceFingerprint })
-        .where(eq(employees.id, pengguna.employeeId));
-    } else if (karyawan.deviceFingerprint !== posisi.deviceFingerprint) {
-      flags.push("DEVICE_BARU");
-    }
-  }
-
   const alamat = await alamatDariKoordinat(posisi.lat, posisi.lng);
   const fotoJadi = await olahFotoAbsensi(foto, {
     waktu: sekarang,
@@ -311,7 +291,6 @@ export async function aksiClockIn(
       clockInOutsideArea: geo.diLuarArea,
       clockInReason: posisi.alasan ?? null,
       menitTerlambat: nilai.menitTerlambat,
-      deviceFingerprint: posisi.deviceFingerprint ?? null,
       flags,
     })
     .returning();

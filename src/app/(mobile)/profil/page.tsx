@@ -33,7 +33,6 @@ export default async function HalamanProfil() {
       jenisKelamin: employees.jenisKelamin,
       tipeKaryawan: employees.tipeKaryawan,
       fotoProfil: employees.fotoProfil,
-      deviceFingerprint: employees.deviceFingerprint,
       departemen: departments.nama,
       jabatan: positions.nama,
     })
@@ -86,10 +85,6 @@ export default async function HalamanProfil() {
       nilai: detail?.tanggalMasuk ? tanggalPanjang(detail.tanggalMasuk) : "—",
     },
     { label: "Peran akun", nilai: LABEL_PERAN[pengguna.role] ?? pengguna.role },
-    {
-      label: "Perangkat terikat",
-      nilai: detail?.deviceFingerprint ? "Sudah terikat" : "Belum ada",
-    },
   ];
 
   return (

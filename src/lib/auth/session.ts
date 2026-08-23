@@ -17,7 +17,18 @@ import {
 } from "@/db/schema";
 
 export const COOKIE_SESI = "alia_sesi";
+
+/*
+ * Umur sesi dibedakan menurut wewenang.
+ *
+ * Karyawan membuka aplikasi tiap hari untuk absen, jadi tujuh hari membuatnya
+ * jarang diminta masuk ulang. Akun yang bisa melihat data seluruh karyawan
+ * ditahan sehari saja: risiko terbesar di klinik bukan pembobolan dari luar,
+ * melainkan sesi admin yang tertinggal terbuka di perangkat bersama lalu
+ * dipakai orang berikutnya yang memegangnya.
+ */
 const UMUR_SESI_HARI = 7;
+const UMUR_SESI_ADMIN_HARI = 1;
 
 /**
  * Sesi disimpan sebagai token acak di cookie httpOnly, sedangkan database
@@ -35,7 +46,17 @@ export async function buatSesi(
 ) {
   const db = await getDb();
   const token = randomBytes(32).toString("base64url");
-  const kedaluwarsa = new Date(Date.now() + UMUR_SESI_HARI * 86_400_000);
+
+  const [akun] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  const umur =
+    akun && PERAN_PENYETUJU.includes(akun.role) ? UMUR_SESI_ADMIN_HARI : UMUR_SESI_HARI;
+
+  const kedaluwarsa = new Date(Date.now() + umur * 86_400_000);
 
   await db.insert(sessions).values({
     userId,
@@ -53,6 +74,19 @@ export async function buatSesi(
     path: "/",
     expires: kedaluwarsa,
   });
+}
+
+/**
+ * Mencabut seluruh sesi milik seorang pengguna.
+ *
+ * Dipakai saat password diganti dan saat pengguna sengaja mengeluarkan diri
+ * dari semua perangkat. Tanpa ini, orang yang sempat tahu password lama tetap
+ * bisa memakai sesinya sampai kedaluwarsa — mengganti password tidak ada
+ * gunanya kalau sesi lamanya dibiarkan hidup.
+ */
+export async function cabutSemuaSesi(userId: string) {
+  const db = await getDb();
+  await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
 export async function hapusSesi() {

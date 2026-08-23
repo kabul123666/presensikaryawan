@@ -2,17 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Check,
-  Copy,
-  KeyRound,
-  Loader2,
-  Pencil,
-  Power,
-  Smartphone,
-  UserPlus,
-  X,
-} from "lucide-react";
+import { Check, Copy, KeyRound, Loader2, Pencil, Power, UserPlus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Hint, Input, Label, Select } from "@/components/ui/field";
@@ -21,7 +11,6 @@ import type { Role, UserStatus } from "@/db/schema";
 import { cn, inisial } from "@/lib/utils";
 import { tanggalPendek } from "@/lib/waktu";
 import {
-  aksiLepasPerangkat,
   aksiResetPassword,
   aksiTambahKaryawan,
   aksiUbahKaryawan,
@@ -513,19 +502,6 @@ export function PanelKaryawan({
                         >
                           <KeyRound size={16} />
                         </button>
-                        {k.punyaDevice && (
-                          <button
-                            title="Lepas ikatan perangkat"
-                            aria-label={`Lepas perangkat ${k.nama}`}
-                            disabled={proses}
-                            onClick={() =>
-                              jalankan(() => aksiLepasPerangkat(k.employeeId))
-                            }
-                            className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-lg transition-colors"
-                          >
-                            <Smartphone size={16} />
-                          </button>
-                        )}
                         <button
                           title={k.status === "ACTIVE" ? "Nonaktifkan" : "Aktifkan"}
                           aria-label={`${k.status === "ACTIVE" ? "Nonaktifkan" : "Aktifkan"} ${k.nama}`}

@@ -49,7 +49,6 @@ export type BarisKaryawan = {
   lokasi: string | null;
   shift: string | null;
   tanggalMasuk: string | null;
-  punyaDevice: boolean;
   /** Ikut pencatatan kehadiran; false untuk akun pengelola sistem. */
   wajibAbsen: boolean;
   /** Cabang tambahan tempat ia juga boleh absen, selain lokasi utamanya. */
@@ -91,7 +90,6 @@ export async function daftarKaryawan(filter: FilterKaryawan = {}) {
       lokasi: locations.nama,
       shift: shifts.nama,
       tanggalMasuk: employees.tanggalMasuk,
-      deviceFingerprint: employees.deviceFingerprint,
     })
     .from(employees)
     .innerJoin(users, eq(users.id, employees.userId))
@@ -123,9 +121,8 @@ export async function daftarKaryawan(filter: FilterKaryawan = {}) {
     petaLokasi.set(t.employeeId, daftar);
   }
 
-  return baris.map(({ deviceFingerprint, ...sisa }): BarisKaryawan => ({
+  return baris.map((sisa): BarisKaryawan => ({
     ...sisa,
-    punyaDevice: Boolean(deviceFingerprint),
     lokasiTambahanIds: petaLokasi.get(sisa.employeeId) ?? [],
   }));
 }

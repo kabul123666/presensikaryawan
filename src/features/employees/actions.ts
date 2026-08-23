@@ -18,7 +18,7 @@ import {
   users,
 } from "@/db/schema";
 import { hashPassword, periksaKekuatanPassword } from "@/lib/auth/password";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { PERAN_ADMIN, wajibPeran, buatSesi, cabutSemuaSesi } from "@/lib/auth/session";
 import { tanggalWIB } from "@/lib/waktu";
 
 export type HasilKaryawan = {
@@ -494,33 +494,6 @@ export async function aksiUbahKaryawan(
   return { ok: true, pesan: `Data ${d.nama} diperbarui.` };
 }
 
-/** Melepas ikatan perangkat supaya karyawan bisa absen dari ponsel baru. */
-export async function aksiLepasPerangkat(employeeId: string): Promise<HasilKaryawan> {
-  const pengguna = await wajibPeran(...PERAN_ADMIN);
-  const db = await getDb();
-
-  await db
-    .update(employees)
-    .set({ deviceFingerprint: null })
-    .where(eq(employees.id, employeeId));
-
-  const info = await infoPermintaan();
-  await db.insert(auditLogs).values({
-    actorId: pengguna.userId,
-    aksi: "LEPAS_PERANGKAT",
-    entitas: "employees",
-    entitasId: employeeId,
-    ip: info.ip,
-    userAgent: info.userAgent,
-  });
-
-  segarkan();
-  return {
-    ok: true,
-    pesan: "Ikatan perangkat dilepas. Ponsel berikutnya yang dipakai absen akan diikat.",
-  };
-}
-
 /** Ganti password sendiri dari halaman profil karyawan. */
 export async function aksiGantiPasswordSendiri(
   _prev: HasilKaryawan | null,
@@ -554,6 +527,21 @@ export async function aksiGantiPasswordSendiri(
     .set({ passwordHash: await hashPassword(baru), updatedAt: new Date() })
     .where(eq(users.id, pengguna.userId));
 
+  /*
+   * Seluruh sesi dicabut, lalu satu sesi baru dibuat untuk yang sedang
+   * mengganti password.
+   *
+   * Orang biasanya mengganti password justru karena curiga ada yang tahu.
+   * Kalau sesi lama dibiarkan hidup, yang tahu password lama tetap bisa masuk
+   * sampai sesinya kedaluwarsa — penggantiannya jadi sia-sia.
+   */
+  await cabutSemuaSesi(pengguna.userId);
+  const infoSesi = await infoPermintaan();
+  await buatSesi(pengguna.userId, {
+    userAgent: infoSesi.userAgent,
+    ip: infoSesi.ip,
+  });
+
   const info = await infoPermintaan();
   await db.insert(auditLogs).values({
     actorId: pengguna.userId,
@@ -565,7 +553,10 @@ export async function aksiGantiPasswordSendiri(
   });
 
   revalidatePath("/profil");
-  return { ok: true, pesan: "Password berhasil diganti." };
+  return {
+    ok: true,
+    pesan: "Password berhasil diganti. Sesi di perangkat lain ikut dikeluarkan.",
+  };
 }
 
 /** Daftar pendaftaran mandiri yang menunggu keputusan. */

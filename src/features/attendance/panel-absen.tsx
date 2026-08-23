@@ -41,28 +41,6 @@ type BarisTindakan = {
   kodePasien: string;
 };
 
-/** Sidik perangkat sederhana untuk mengikat akun ke satu ponsel. */
-function sidikPerangkat() {
-  if (typeof window === "undefined") return "";
-  const tersimpan = localStorage.getItem("alia-device");
-  if (tersimpan) return tersimpan;
-  const bahan = [
-    navigator.userAgent,
-    screen.width,
-    screen.height,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.hardwareConcurrency ?? 0,
-  ].join("|");
-  let hash = 0;
-  for (let i = 0; i < bahan.length; i++) {
-    hash = (hash << 5) - hash + bahan.charCodeAt(i);
-    hash |= 0;
-  }
-  const id = `dev_${Math.abs(hash).toString(36)}`;
-  localStorage.setItem("alia-device", id);
-  return id;
-}
-
 export function PanelAbsen({
   mode,
   lokasi,
@@ -173,7 +151,6 @@ export function PanelAbsen({
     fd.set("lat", String(posisi.lat));
     fd.set("lng", String(posisi.lng));
     fd.set("akurasi", String(Math.round(posisi.akurasi)));
-    fd.set("deviceFingerprint", sidikPerangkat());
     if (alasan.trim()) fd.set("alasan", alasan.trim());
 
     if (mode === "pulang") {

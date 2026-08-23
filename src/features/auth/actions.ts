@@ -12,7 +12,13 @@ import {
   periksaKekuatanPassword,
   verifyPassword,
 } from "@/lib/auth/password";
-import { buatSesi, hapusSesi, PERAN_ADMIN } from "@/lib/auth/session";
+import {
+  buatSesi,
+  hapusSesi,
+  PERAN_ADMIN,
+  cabutSemuaSesi,
+  wajibMasuk,
+} from "@/lib/auth/session";
 
 export type HasilForm = { ok: boolean; pesan?: string; field?: string };
 
@@ -240,5 +246,18 @@ export async function aksiDaftar(
 
 export async function aksiKeluar() {
   await hapusSesi();
+  redirect("/masuk");
+}
+
+/**
+ * Mengeluarkan pengguna dari seluruh perangkat sekaligus.
+ *
+ * Berguna ketika seseorang lupa menutup sesinya di ponsel bersama atau di
+ * komputer kantor: satu tombol mencabut semuanya, tanpa perlu tahu perangkat
+ * mana saja yang masih terbuka.
+ */
+export async function aksiKeluarSemuaPerangkat() {
+  const pengguna = await wajibMasuk();
+  await cabutSemuaSesi(pengguna.userId);
   redirect("/masuk");
 }
