@@ -251,7 +251,7 @@ export function PanelOrganisasi({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] text-sm">
+          <table className="w-full text-sm lg:min-w-[680px]">
             <thead>
               <tr className="border-app text-subtle border-b text-left text-[11px] font-bold tracking-wide uppercase">
                 <th className="px-5 py-2.5">Jabatan</th>

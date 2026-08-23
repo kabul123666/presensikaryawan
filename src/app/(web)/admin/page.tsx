@@ -119,7 +119,7 @@ export default async function HalamanDashboard() {
       </div>
 
       {/* Angka utama hari ini */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KartuAngka
           label="Hadir hari ini"
           nilai={ringkas.hadir}
@@ -202,7 +202,7 @@ export default async function HalamanDashboard() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px] text-sm">
+                <table className="w-full text-sm lg:min-w-[600px]">
                   <thead>
                     <tr className="border-app text-subtle border-b text-left text-[11px] font-medium">
                       <th className="px-4 py-2">Karyawan</th>

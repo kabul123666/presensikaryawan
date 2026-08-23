@@ -160,7 +160,7 @@ export function PanelTutupTahun({
       ) : (
         <div className="bg-surface border-app overflow-hidden rounded-[var(--radius-card)] border">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full text-sm lg:min-w-[760px]">
               <thead>
                 <tr className="border-app text-subtle border-b text-left text-[11px] font-bold tracking-wide uppercase">
                   <th className="px-5 py-2.5">Karyawan</th>

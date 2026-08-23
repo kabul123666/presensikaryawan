@@ -133,7 +133,7 @@ export function TabelAnomali({ baris }: { baris: BarisAnomali[] }) {
       )}
 
       <div className="border-app bg-surface overflow-x-auto rounded-[var(--radius-card)] border">
-        <table className="w-full min-w-[52rem] text-sm">
+        <table className="w-full text-sm lg:min-w-[52rem]">
           <thead>
             <tr className="border-app text-subtle border-b text-left text-xs">
               <th className="w-10 py-2.5 pl-3">

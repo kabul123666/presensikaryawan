@@ -189,7 +189,7 @@ export default async function HalamanRekapAbsensi({
       </div>
 
       {/* Ringkasan */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 print:hidden">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 print:hidden">
         {[
           {
             label: "Total kehadiran",
@@ -240,7 +240,7 @@ export default async function HalamanRekapAbsensi({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-sm">
+            <table className="w-full text-sm lg:min-w-[1000px]">
               <thead>
                 <tr className="border-app text-subtle border-b text-left text-[11px] font-bold tracking-wide uppercase">
                   <th className="px-5 py-2.5">Karyawan</th>

@@ -433,14 +433,14 @@ export function PanelKaryawan({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-sm">
+            <table className="w-full text-sm lg:min-w-[860px]">
               <thead>
                 <tr className="border-app text-subtle border-b text-left text-[11px] font-bold tracking-wide uppercase">
-                  <th className="px-5 py-2.5">Karyawan</th>
-                  <th className="px-3 py-2.5">Jabatan</th>
-                  <th className="px-3 py-2.5">Shift</th>
-                  <th className="px-3 py-2.5">Peran</th>
-                  <th className="px-3 py-2.5">Status</th>
+                  <th className="px-3 py-2.5 lg:px-5">Karyawan</th>
+                  <th className="hidden px-3 py-2.5 lg:table-cell">Jabatan</th>
+                  <th className="hidden px-3 py-2.5 lg:table-cell">Shift</th>
+                  <th className="hidden px-3 py-2.5 lg:table-cell">Peran</th>
+                  <th className="hidden px-3 py-2.5 lg:table-cell">Status</th>
                   <th className="px-5 py-2.5 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -450,34 +450,49 @@ export function PanelKaryawan({
                     key={k.employeeId}
                     className="border-app hover:bg-surface-muted border-b transition-colors last:border-0"
                   >
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="bg-brand-600 grid size-9 shrink-0 place-items-center rounded-full text-[12px] font-extrabold text-white">
+                    <td className="max-w-0 px-3 py-3 lg:max-w-none lg:px-5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="bg-brand-600 hidden size-9 shrink-0 place-items-center rounded-full text-[12px] font-extrabold text-white lg:grid">
                           {inisial(k.nama)}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-body font-semibold">{k.nama}</p>
-                          <p className="text-subtle text-xs">
+                          <p className="text-body truncate font-semibold">{k.nama}</p>
+                          <p className="text-subtle truncate text-xs">
                             {k.username} · {k.nik ?? "—"}
                           </p>
+                          {/* Di ponsel kolom di kanan disembunyikan, jadi isinya
+                              diringkas di sini agar tidak hilang. */}
+                          <p className="text-subtle truncate text-xs lg:hidden">
+                            {k.jabatan ?? LABEL_PERAN[k.role]}
+                          </p>
+                          <Badge
+                            tone={LABEL_STATUS[k.status].nada}
+                            className="mt-1 lg:hidden"
+                          >
+                            {LABEL_STATUS[k.status].teks}
+                          </Badge>
                         </div>
                       </div>
                     </td>
-                    <td className="text-muted px-3 py-3">
+                    <td className="text-muted hidden px-3 py-3 lg:table-cell">
                       {k.jabatan ?? "—"}
                       <span className="text-subtle block text-xs">
                         {k.departemen ?? "—"}
                       </span>
                     </td>
-                    <td className="text-muted px-3 py-3">{k.shift ?? "—"}</td>
-                    <td className="text-muted px-3 py-3">{LABEL_PERAN[k.role]}</td>
-                    <td className="px-3 py-3">
+                    <td className="text-muted hidden px-3 py-3 lg:table-cell">
+                      {k.shift ?? "—"}
+                    </td>
+                    <td className="text-muted hidden px-3 py-3 lg:table-cell">
+                      {LABEL_PERAN[k.role]}
+                    </td>
+                    <td className="hidden px-3 py-3 lg:table-cell">
                       <Badge tone={LABEL_STATUS[k.status].nada}>
                         {LABEL_STATUS[k.status].teks}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3">
-                      <div className="flex justify-end gap-1">
+                    <td className="px-2 py-3 lg:px-5">
+                      <div className="flex justify-end gap-0.5 lg:gap-1">
                         <button
                           title="Ubah data"
                           aria-label={`Ubah data ${k.nama}`}
@@ -486,7 +501,7 @@ export function PanelKaryawan({
                             setTerpilih(k);
                             setModal("ubah");
                           }}
-                          className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-lg transition-colors"
+                          className="text-muted hover:bg-surface-muted hover:text-body grid size-8 place-items-center rounded-lg transition-colors lg:size-9"
                         >
                           <Pencil size={16} />
                         </button>
@@ -498,7 +513,7 @@ export function PanelKaryawan({
                             setPasswordBaru("");
                             setResetUntuk(k);
                           }}
-                          className="text-muted hover:bg-surface-muted hover:text-body grid size-9 place-items-center rounded-lg transition-colors"
+                          className="text-muted hover:bg-surface-muted hover:text-body grid size-8 place-items-center rounded-lg transition-colors lg:size-9"
                         >
                           <KeyRound size={16} />
                         </button>

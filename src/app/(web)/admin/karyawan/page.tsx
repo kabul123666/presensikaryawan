@@ -54,7 +54,7 @@ export default async function HalamanKaryawan({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {[
           { label: "Total karyawan", nilai: ringkas.total, warna: "text-body" },
           { label: "Aktif", nilai: ringkas.aktif, warna: "text-status-ontime" },
