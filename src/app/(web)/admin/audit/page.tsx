@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/status";
 import { daftarAuditLog, jenisAksiAudit } from "@/features/settings/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn } from "@/lib/utils";
 import { jamDetikWIB, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
@@ -33,7 +33,7 @@ export default async function HalamanAudit({
 }: {
   searchParams: Promise<{ aksi?: string }>;
 }) {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("audit");
   const sp = await searchParams;
 
   const [daftar, jenisAksi] = await Promise.all([

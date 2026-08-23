@@ -10,7 +10,8 @@ import { departments, employees, positions, users } from "@/db/schema";
 import { rekapPeriodeAtauKunci } from "@/features/reports/kunci";
 import { detailHarian, rentangPeriode } from "@/features/reports/service";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
-import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { lingkupData } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
 import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
@@ -30,7 +31,7 @@ export default async function HalamanDetailAbsensi({
   params: Promise<{ employeeId: string }>;
   searchParams: Promise<{ bulan?: string }>;
 }) {
-  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  const pengguna = await wajibAksesMenu("absensi");
   const { employeeId } = await params;
   const sp = await searchParams;
 

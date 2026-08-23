@@ -11,7 +11,7 @@ import {
   TabelPersetujuan,
   type BarisTampil,
 } from "@/features/approval/tabel-persetujuan";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn } from "@/lib/utils";
 import { tanggalWIB } from "@/lib/waktu";
 
@@ -29,7 +29,7 @@ export default async function HalamanPersetujuan({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  const pengguna = await wajibAksesMenu("persetujuan");
   const sp = await searchParams;
 
   const status = (TAB.find((t) => t.nilai === sp.status)?.nilai ?? "PENDING") as

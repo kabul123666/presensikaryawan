@@ -9,10 +9,11 @@ import { KELOMPOK, type Badge } from "./menu-admin";
 
 export function SidebarAdmin({
   badge,
-  adminPenuh,
+  izin,
 }: {
   badge: Badge;
-  adminPenuh: boolean;
+  /** Kunci modul yang boleh dibuka pengguna ini. */
+  izin: string[];
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -28,12 +29,10 @@ export function SidebarAdmin({
   const alihkan = (href: string) =>
     setDibuka((s) => (s.includes(href) ? s.filter((x) => x !== href) : [...s, href]));
 
-  const kelompok = adminPenuh
-    ? KELOMPOK
-    : KELOMPOK.map((k) => ({
-        ...k,
-        menu: k.menu.filter((m) => !("hanyaAdmin" in m && m.hanyaAdmin)),
-      })).filter((k) => k.menu.length > 0);
+  const kelompok = KELOMPOK.map((k) => ({
+    ...k,
+    menu: k.menu.filter((m) => izin.includes(m.kunci)),
+  })).filter((k) => k.menu.length > 0);
 
   const isi = (
     <nav className="flex h-full flex-col">

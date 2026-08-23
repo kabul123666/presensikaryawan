@@ -4,12 +4,12 @@ import {
   type BarisJabatan,
 } from "@/features/master/panel-organisasi";
 import { daftarDepartemen, daftarJabatan } from "@/features/master/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 
 export const metadata = { title: "Departemen & Jabatan" };
 
 export default async function HalamanOrganisasi() {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("organisasi");
   const [departemen, jabatan] = await Promise.all([daftarDepartemen(), daftarJabatan()]);
 
   return (

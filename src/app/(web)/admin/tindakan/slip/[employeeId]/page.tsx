@@ -5,7 +5,7 @@ import { slipInsentif } from "@/features/procedures/service";
 import { SlipInsentifCetak } from "@/features/procedures/slip-insentif";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
 import { bacaPengaturan } from "@/features/settings/service";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { namaBulan, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Slip Insentif" };
@@ -17,7 +17,7 @@ export default async function HalamanSlipKaryawan({
   params: Promise<{ employeeId: string }>;
   searchParams: Promise<{ bulan?: string }>;
 }) {
-  await wajibPeran(...PERAN_PENYETUJU);
+  await wajibAksesMenu("tindakan");
   const { employeeId } = await params;
   const sp = await searchParams;
 

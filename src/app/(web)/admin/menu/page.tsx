@@ -4,7 +4,8 @@ import { ChevronRight, LogOut } from "lucide-react";
 import { KELOMPOK } from "@/components/web/menu-admin";
 import { aksiKeluar } from "@/features/auth/actions";
 import { ringkasanHariIni } from "@/features/admin/service";
-import { bolehKelolaSemua, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { aksesMenuPengguna } from "@/lib/auth/akses";
+import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 
 export const metadata = { title: "Menu Admin" };
 
@@ -19,7 +20,7 @@ export const metadata = { title: "Menu Admin" };
 export default async function HalamanMenuAdmin() {
   const pengguna = await wajibPeran(...PERAN_PENYETUJU);
   const ringkas = await ringkasanHariIni();
-  const adminPenuh = bolehKelolaSemua(pengguna.role);
+  const izin = await aksesMenuPengguna(pengguna);
 
   const badge: Record<string, number> = {
     persetujuan: ringkas.menungguPersetujuan,
@@ -28,7 +29,7 @@ export default async function HalamanMenuAdmin() {
 
   const kelompok = KELOMPOK.map((k) => ({
     ...k,
-    menu: k.menu.filter((m) => adminPenuh || !("hanyaAdmin" in m && m.hanyaAdmin)),
+    menu: k.menu.filter((m) => izin.includes(m.kunci)),
   })).filter((k) => k.menu.length > 0);
 
   return (
@@ -36,7 +37,7 @@ export default async function HalamanMenuAdmin() {
       <div>
         <h1 className="text-body text-2xl font-bold tracking-tight">Menu Admin</h1>
         <p className="text-muted mt-1 text-sm">
-          {pengguna.nama} · {adminPenuh ? "akses penuh" : "akses kepala unit"}
+          {pengguna.nama} · {izin.length} modul dapat dibuka
         </p>
       </div>
 

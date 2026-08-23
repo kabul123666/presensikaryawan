@@ -65,6 +65,13 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
 
 ## Keputusan yang sengaja diambil
 
+- **Kepala Unit dan Admin/HRD mendapat seluruh modul admin sebagai bawaan**,
+  atas permintaan pemilik. Pembatasan dilakukan pemilik lewat Pengaturan → Hak
+  Akses Menu, bukan dipaksakan kode. Perlu disadari: bawaan ini berarti kepala
+  unit bisa membuka Pengaturan dan Audit Log.
+- **WFH bukan pengajuan.** Ia kewenangan yang melekat pada peran Kepala Unit —
+  boleh absen dari luar area, foto tetap wajib, hari itu ditandai `WFH`.
+
 - **Ikatan perangkat dicabut** atas permintaan pemilik. Aplikasi boleh dibuka
   dan dipasang di perangkat mana pun. Kolom `employees.device_fingerprint` dan
   jenis pengajuan `DEVICE_CHANGE` sengaja disisakan supaya baris lama tetap
@@ -100,6 +107,14 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
   membacanya dari aturan — akibatnya aturan berjenjang tersimpan rapi tapi
   tidak pernah berlaku. Setiap tempat baru yang membuat baris `requests` wajib
   memanggilnya.
+- **Halaman admin dijaga `wajibAksesMenu("<kunci>")`, bukan `wajibPeran`.**
+  Halaman admin baru wajib memakainya, dan kuncinya didaftarkan di
+  `src/components/web/menu-admin.tsx` serta `SEMUA_KUNCI_MENU` di
+  `features/settings/service.ts` — kalau tidak, modulnya tidak akan pernah
+  muncul di layar pengaturan hak akses.
+- **Nilai biasa tidak bisa diimpor server dari modul `"use client"`.** Yang
+  sampai hanya referensi komponen. Peta menu admin karena itu tinggal di
+  berkas netral `menu-admin.tsx`, bukan di dalam komponen sidebar.
 - **Periode rekap belum tentu bulan kalender.** Ambil rentangnya lewat
   `rentangPeriode()`, jangan memanggil `batasBulan()` sendiri — layar, halaman
   rincian, dan berkas unduhan harus memotong periode di tanggal yang sama.
@@ -117,7 +132,8 @@ karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · hala
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
 persetujuan dua langkah (Kepala Unit lalu Admin/HRD) untuk cuti, izin, lembur,
 dan koreksi absen · larangan menyetujui pengajuan sendiri · keluar dari semua
-perangkat ·
+perangkat · WFH untuk kepala unit · panel admin bentuk mobile · pengaturan hak
+akses menu per peran ·
 dan formulir pengajuan per jenis · tampilan desktop untuk karyawan (sidebar +
 dua kolom) · layar absen bergaya peta penuh di menu Presensi · rekap kehadiran
 berbentuk kartu per hari · pemilih warna aplikasi · periode rekap mengikuti

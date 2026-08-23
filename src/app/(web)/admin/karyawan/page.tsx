@@ -8,7 +8,7 @@ import {
   opsiFormulir,
   ringkasanKaryawan,
 } from "@/features/employees/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn } from "@/lib/utils";
 import { tanggalWIB } from "@/lib/waktu";
 
@@ -26,7 +26,7 @@ export default async function HalamanKaryawan({
 }: {
   searchParams: Promise<{ status?: string; cari?: string; dept?: string }>;
 }) {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("karyawan");
   const sp = await searchParams;
 
   const status = (TAB.find((t) => t.nilai === sp.status)?.nilai ?? "SEMUA") as

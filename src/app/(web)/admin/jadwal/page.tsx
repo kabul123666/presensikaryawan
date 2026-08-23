@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { PanelRoster } from "@/features/roster/panel-roster";
 import { jadwalBulan, karyawanRoster, shiftRoster } from "@/features/roster/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import {
   batasBulan,
   namaBulan,
@@ -19,7 +19,7 @@ export default async function HalamanJadwal({
 }: {
   searchParams: Promise<{ bulan?: string }>;
 }) {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("jadwal");
   const sp = await searchParams;
 
   const kini = tanggalWIB();

@@ -19,7 +19,7 @@ import {
   type YearEndChoice,
 } from "@/db/schema";
 import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
-import { bacaPengaturan } from "./service";
+import { bacaPengaturan, SEMUA_KUNCI_MENU } from "./service";
 
 export type HasilPengaturan = { ok: boolean; pesan: string };
 
@@ -516,4 +516,48 @@ export async function aksiTutupTahunCuti(
     ok: true,
     pesan: `Tutup tahun ${tahun} selesai: ${jumlahKaryawan} karyawan diproses, pencairan Rp${totalDiuangkan.toLocaleString("id-ID")}, ${totalHariDibawa} hari dibawa ke tahun depan.`,
   };
+}
+
+/* ==========================================================================
+ * Hak akses menu
+ * ========================================================================== */
+
+const skemaAkses = z.object({
+  admin: z.string(),
+  manager: z.string(),
+});
+
+/**
+ * Menyimpan modul admin yang boleh dibuka tiap peran.
+ *
+ * Kunci yang tidak dikenal dibuang diam-diam: daftar modul bisa berubah, dan
+ * pengaturan lama yang menyebut modul yang sudah tidak ada tidak boleh
+ * membuat penyimpanannya gagal.
+ */
+export async function aksiSimpanAksesMenu(
+  _prev: HasilPengaturan | null,
+  formData: FormData,
+): Promise<HasilPengaturan> {
+  const pengguna = await wajibPeran("SUPER_ADMIN");
+  const parsed = skemaAkses.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, pesan: "Pilihan tidak dikenali." };
+
+  const bersihkan = (nilai: string) =>
+    nilai
+      .split(",")
+      .map((x) => x.trim())
+      .filter((x) => SEMUA_KUNCI_MENU.includes(x));
+
+  await simpanPengaturan(
+    pengguna.userId,
+    "akses_menu",
+    {
+      ADMIN: bersihkan(parsed.data.admin),
+      MANAGER: bersihkan(parsed.data.manager),
+    },
+    "Hak akses menu admin",
+  );
+
+  revalidatePath("/admin");
+  return { ok: true, pesan: "Hak akses disimpan." };
 }

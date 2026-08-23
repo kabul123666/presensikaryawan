@@ -24,10 +24,13 @@ import {
 } from "lucide-react";
 
 /**
- * `hanyaAdmin` menandai modul yang server-nya memang menolak Manager.
- * Menyaringnya di sini bukan pengamanan — pengamanannya ada di wajibPeran()
- * pada tiap halaman — melainkan supaya Manager tidak disuguhi delapan menu
- * yang semuanya berujung ke layar "tidak berwenang".
+ * `kunci` adalah nama tetap tiap modul, dipakai mengatur siapa boleh
+ * membukanya. Sengaja bukan alamatnya: alamat boleh berubah tanpa membatalkan
+ * pengaturan hak akses yang sudah disusun pemilik.
+ *
+ * Penyaringan di sini bukan pengamanan — pengamanannya ada pada
+ * `wajibAksesMenu()` yang dipanggil tiap halaman — melainkan supaya orang
+ * tidak disuguhi menu yang semuanya berujung ke layar "tidak berwenang".
  */
 export type Badge = { persetujuan: number; pendaftaran: number };
 
@@ -35,15 +38,27 @@ export const KELOMPOK = [
   {
     judul: "Operasional",
     menu: [
-      { href: "/admin", label: "Dashboard", Ikon: LayoutDashboard, exact: true },
-      { href: "/admin/absensi", label: "Rekap Absensi", Ikon: CalendarRange },
       {
+        kunci: "dashboard",
+        href: "/admin",
+        label: "Dashboard",
+        Ikon: LayoutDashboard,
+        exact: true,
+      },
+      {
+        kunci: "absensi",
+        href: "/admin/absensi",
+        label: "Rekap Absensi",
+        Ikon: CalendarRange,
+      },
+      {
+        kunci: "anomali",
         href: "/admin/anomali",
         label: "Tinjau Anomali",
         Ikon: ShieldAlert,
-        hanyaAdmin: true,
       },
       {
+        kunci: "persetujuan",
         href: "/admin/persetujuan",
         label: "Persetujuan",
         Ikon: ClipboardCheck,
@@ -69,6 +84,7 @@ export const KELOMPOK = [
         ],
       },
       {
+        kunci: "tindakan",
         href: "/admin/tindakan",
         label: "Tindakan & Fee",
         Ikon: Wallet,
@@ -87,10 +103,10 @@ export const KELOMPOK = [
         ],
       },
       {
+        kunci: "pengumuman",
         href: "/admin/pengumuman",
         label: "Pengumuman",
         Ikon: Megaphone,
-        hanyaAdmin: true,
       },
     ],
   },
@@ -98,11 +114,11 @@ export const KELOMPOK = [
     judul: "Kepegawaian",
     menu: [
       {
+        kunci: "karyawan",
         href: "/admin/karyawan",
         label: "Karyawan",
         Ikon: Users,
         badge: "pendaftaran" as const,
-        hanyaAdmin: true,
         param: "status" as const,
         anak: [
           { href: "/admin/karyawan?status=SEMUA", label: "Semua", tab: "SEMUA" },
@@ -120,23 +136,23 @@ export const KELOMPOK = [
         ],
       },
       {
+        kunci: "organisasi",
         href: "/admin/organisasi",
         label: "Departemen & Jabatan",
         Ikon: Building2,
-        hanyaAdmin: true,
       },
       {
+        kunci: "jadwal",
         href: "/admin/jadwal",
         label: "Jadwal Jaga",
         Ikon: CalendarDays,
-        hanyaAdmin: true,
       },
-      { href: "/admin/shift", label: "Shift", Ikon: Stethoscope, hanyaAdmin: true },
+      { kunci: "shift", href: "/admin/shift", label: "Shift", Ikon: Stethoscope },
       {
+        kunci: "lokasi",
         href: "/admin/lokasi",
         label: "Lokasi & Geofence",
         Ikon: MapPinned,
-        hanyaAdmin: true,
       },
     ],
   },
@@ -144,10 +160,10 @@ export const KELOMPOK = [
     judul: "Sistem",
     menu: [
       {
+        kunci: "pengaturan",
         href: "/admin/pengaturan",
         label: "Pengaturan",
         Ikon: Settings,
-        hanyaAdmin: true,
         anak: [
           { href: "/admin/pengaturan?tab=umum", label: "Umum", tab: "umum" },
           { href: "/admin/pengaturan?tab=cuti", label: "Cuti", tab: "cuti" },
@@ -162,9 +178,24 @@ export const KELOMPOK = [
             label: "Tutup Tahun",
             tab: "tutup-tahun",
           },
+          {
+            href: "/admin/pengaturan?tab=akses",
+            label: "Hak Akses Menu",
+            tab: "akses",
+          },
         ],
       },
-      { href: "/admin/audit", label: "Audit Log", Ikon: ScrollText, hanyaAdmin: true },
+      {
+        kunci: "audit",
+        href: "/admin/audit",
+        label: "Audit Log",
+        Ikon: ScrollText,
+      },
     ],
   },
 ];
+
+/** Daftar rata seluruh modul admin, dipakai layar pengaturan hak akses. */
+export const MENU_ADMIN = KELOMPOK.flatMap((k) =>
+  k.menu.map((m) => ({ kunci: m.kunci, label: m.label, kelompok: k.judul })),
+);

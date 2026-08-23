@@ -3,13 +3,13 @@ import {
   PanelPengumuman,
   type BarisPengumuman,
 } from "@/features/announcements/panel-pengumuman";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { jamWIB, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Pengumuman" };
 
 export default async function HalamanPengumuman() {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("pengumuman");
   const daftar = await daftarPengumuman();
 
   return (

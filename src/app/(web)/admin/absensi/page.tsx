@@ -7,7 +7,8 @@ import { kunciPeriode, rekapPeriodeAtauKunci } from "@/features/reports/kunci";
 import { opsiPenyaring, rentangPeriode, totalRekap } from "@/features/reports/service";
 import { TombolKunci } from "@/features/reports/tombol-kunci";
 import { bacaPengaturan } from "@/features/settings/service";
-import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { lingkupData } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn, formatDurasi, formatRupiah } from "@/lib/utils";
 import { namaBulan, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
@@ -18,7 +19,7 @@ export default async function HalamanRekapAbsensi({
 }: {
   searchParams: Promise<{ bulan?: string; dept?: string }>;
 }) {
-  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  const pengguna = await wajibAksesMenu("absensi");
   const sp = await searchParams;
 
   const kini = tanggalWIB();

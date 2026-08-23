@@ -1,11 +1,11 @@
 import { PanelShift, type BarisShift } from "@/features/master/panel-shift";
 import { daftarShift } from "@/features/master/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 
 export const metadata = { title: "Shift & Jadwal" };
 
 export default async function HalamanShift() {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("shift");
   const daftar = await daftarShift();
 
   return (

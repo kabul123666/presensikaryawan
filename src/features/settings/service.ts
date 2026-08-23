@@ -23,6 +23,29 @@ import {
  * Pengaturan key-value
  * ========================================================================== */
 
+/**
+ * Kunci modul admin, disalin apa adanya dari peta menu.
+ *
+ * Ditulis ulang di sini — bukan diimpor dari `components/web/menu-admin` —
+ * karena berkas ini `server-only` dan tidak pantas menarik modul antarmuka
+ * beserta seluruh ikonnya hanya untuk membaca tiga belas kata.
+ */
+export const SEMUA_KUNCI_MENU = [
+  "dashboard",
+  "absensi",
+  "anomali",
+  "persetujuan",
+  "tindakan",
+  "pengumuman",
+  "karyawan",
+  "organisasi",
+  "jadwal",
+  "shift",
+  "lokasi",
+  "pengaturan",
+  "audit",
+];
+
 export type ProfilPerusahaan = {
   nama: string;
   alamat: string;
@@ -52,6 +75,21 @@ export type KebijakanAbsensi = {
   izinkanAbsenTanpaShift: boolean;
 };
 
+/**
+ * Modul admin yang boleh dibuka tiap peran.
+ *
+ * Super Admin sengaja tidak ada di sini: ia pemilik sistem dan selalu boleh
+ * membuka apa pun. Kalau ikut diatur, satu centang yang salah bisa mengunci
+ * satu-satunya orang yang berwenang membukanya kembali.
+ *
+ * Bawaannya seluruh modul untuk kedua peran — pembatasan adalah keputusan
+ * pemilik, bukan bawaan yang dipaksakan kode.
+ */
+export type AksesMenu = {
+  ADMIN: string[];
+  MANAGER: string[];
+};
+
 export type KebijakanCuti = {
   tarifPencairanPerHari: number;
   sumberTarif: "TETAP" | "GAJI_POKOK";
@@ -68,6 +106,7 @@ const BAWAAN: {
   profil_perusahaan: ProfilPerusahaan;
   kebijakan_absensi: KebijakanAbsensi;
   kebijakan_cuti: KebijakanCuti;
+  akses_menu: AksesMenu;
 } = {
   profil_perusahaan: {
     nama: "",
@@ -82,6 +121,10 @@ const BAWAAN: {
     minKarakterCatatan: 10,
     retensiFotoBulan: 24,
     izinkanAbsenTanpaShift: true,
+  },
+  akses_menu: {
+    ADMIN: SEMUA_KUNCI_MENU,
+    MANAGER: SEMUA_KUNCI_MENU,
   },
   kebijakan_cuti: {
     tarifPencairanPerHari: 150_000,

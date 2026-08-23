@@ -6,7 +6,7 @@ import {
   type SaringanAnomali,
 } from "@/features/admin/anomali";
 import { TabelAnomali, type BarisAnomali } from "@/features/admin/tabel-anomali";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Tinjau Anomali" };
@@ -29,7 +29,7 @@ export default async function HalamanAnomali({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("anomali");
   const sp = await searchParams;
 
   const saringan: SaringanAnomali = TAB.some((t) => t.nilai === sp.status)

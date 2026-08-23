@@ -6,6 +6,7 @@ import {
   type BarisAturan,
 } from "@/features/settings/panel-persetujuan";
 import { PanelTutupTahun } from "@/features/settings/panel-tutup-tahun";
+import { PanelAkses } from "@/features/settings/panel-akses";
 import { PanelUmum } from "@/features/settings/panel-umum";
 import {
   bacaPengaturan,
@@ -18,7 +19,8 @@ import {
   sisaCutiTahunan,
   statusTutupTahun,
 } from "@/features/settings/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
+import { ambilPengguna } from "@/lib/auth/session";
 import { tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Pengaturan" };
@@ -29,6 +31,7 @@ const TAB = [
   { nilai: "persetujuan", label: "Aturan Persetujuan" },
   { nilai: "libur", label: "Hari Libur" },
   { nilai: "tutup-tahun", label: "Tutup Tahun" },
+  { nilai: "akses", label: "Hak Akses Menu" },
 ] as const;
 
 type Tab = (typeof TAB)[number]["nilai"];
@@ -38,7 +41,7 @@ export default async function HalamanPengaturan({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("pengaturan");
   const sp = await searchParams;
   const tab = (TAB.find((t) => t.nilai === sp.tab)?.nilai ?? "umum") as Tab;
 
@@ -61,8 +64,37 @@ export default async function HalamanPengaturan({
       {tab === "persetujuan" && <TabPersetujuan />}
       {tab === "libur" && <TabLibur tahun={tahunIni} />}
       {tab === "tutup-tahun" && <TabTutupTahun tahun={tahunIni} />}
+      {tab === "akses" && <TabAkses />}
     </div>
   );
+}
+
+/**
+ * Hanya pemilik sistem yang boleh mengubah hak akses.
+ *
+ * Tabnya tetap bisa dibuka peran lain — mereka berhak tahu batasannya sendiri
+ * — tetapi formulirnya diganti keterangan, bukan dibiarkan bisa dicentang lalu
+ * gagal saat disimpan.
+ */
+async function TabAkses() {
+  const pengguna = await ambilPengguna();
+  const akses = await bacaPengaturan("akses_menu");
+
+  if (pengguna?.role !== "SUPER_ADMIN") {
+    return (
+      <div className="border-app bg-surface rounded-[var(--radius-card)] border px-5 py-9 text-center">
+        <p className="text-body text-sm font-semibold">
+          Hak akses hanya bisa diubah pemilik sistem
+        </p>
+        <p className="text-muted mx-auto mt-1.5 max-w-md text-[13px] leading-relaxed">
+          Anda saat ini bisa membuka {akses.MANAGER.length} modul. Bila ada yang
+          seharusnya tidak terlihat, sampaikan ke pemilik untuk disesuaikan di sini.
+        </p>
+      </div>
+    );
+  }
+
+  return <PanelAkses akses={akses} />;
 }
 
 async function TabUmum() {

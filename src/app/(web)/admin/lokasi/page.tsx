@@ -1,11 +1,11 @@
 import { PanelLokasi, type BarisLokasi } from "@/features/master/panel-lokasi";
 import { daftarLokasi } from "@/features/master/service";
-import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 
 export const metadata = { title: "Lokasi & Geofence" };
 
 export default async function HalamanLokasi() {
-  await wajibPeran(...PERAN_ADMIN);
+  await wajibAksesMenu("lokasi");
   const daftar = await daftarLokasi();
 
   return (

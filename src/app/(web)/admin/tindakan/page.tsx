@@ -18,7 +18,7 @@ import {
   rekapPerJenis,
   ringkasanTindakan,
 } from "@/features/procedures/service";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn, formatRupiah } from "@/lib/utils";
 import { namaBulan, tanggalWIB } from "@/lib/waktu";
 
@@ -35,7 +35,7 @@ export default async function HalamanTindakan({
 }: {
   searchParams: Promise<{ tab?: string; bulan?: string }>;
 }) {
-  await wajibPeran(...PERAN_PENYETUJU);
+  await wajibAksesMenu("tindakan");
   const sp = await searchParams;
 
   const tab = (TAB.find((t) => t.nilai === sp.tab)?.nilai ?? "verifikasi") as

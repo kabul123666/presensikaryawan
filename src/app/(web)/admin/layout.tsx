@@ -4,7 +4,8 @@ import { NavBawahAdmin } from "@/components/web/nav-bawah-admin";
 import { SidebarAdmin } from "@/components/web/sidebar-admin";
 import { TopbarAdmin } from "@/components/web/topbar-admin";
 import { ringkasanHariIni } from "@/features/admin/service";
-import { bolehKelolaSemua, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { aksesMenuPengguna } from "@/lib/auth/akses";
+import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
 
 /**
  * Kerangka dashboard admin.
@@ -19,6 +20,7 @@ import { bolehKelolaSemua, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/sessio
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const pengguna = await wajibPeran(...PERAN_PENYETUJU);
   const ringkas = await ringkasanHariIni();
+  const izin = await aksesMenuPengguna(pengguna);
 
   return (
     <div className="bg-app min-h-dvh">
@@ -27,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           persetujuan: ringkas.menungguPersetujuan,
           pendaftaran: ringkas.pendaftaranBaru,
         }}
-        adminPenuh={bolehKelolaSemua(pengguna.role)}
+        izin={izin}
       />
 
       <div className="lg:pl-[248px]">

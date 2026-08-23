@@ -13,7 +13,7 @@ import {
   trenKehadiran,
 } from "@/features/admin/service";
 import { LABEL_FLAG } from "@/features/admin/tabel-anomali";
-import { PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
 import { cn } from "@/lib/utils";
 import { jamWIB, tanggalPanjang, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
@@ -92,7 +92,7 @@ function Panel({
 }
 
 export default async function HalamanDashboard() {
-  await wajibPeran(...PERAN_PENYETUJU);
+  await wajibAksesMenu("dashboard");
   const hariIni = tanggalWIB();
 
   const [ringkas, feed, tren, antrean, pendaftaran, tinjau, belum] = await Promise.all([
