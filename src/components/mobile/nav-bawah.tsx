@@ -55,7 +55,11 @@ export function NavBawah({ role }: { role: Role }) {
           const aktif = m.href
             ? m.href === "/"
               ? pathname === "/"
-              : pathname.startsWith(m.href)
+              : m.href === "/menu"
+                ? // Modul admin dibuka dari Menu dan tinggal di kerangka yang
+                  // sama, jadi petaknya tetap tersorot selama isinya dibuka.
+                  pathname.startsWith("/menu") || pathname.startsWith("/admin")
+                : pathname.startsWith(m.href)
             : false;
 
           const label = (
