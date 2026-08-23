@@ -63,6 +63,19 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
 3. **Unduh Excel** di Rekap Absensi — sekarang dua lembar; pastikan lembar
    "Rincian Tindakan" terisi dan kolom menit/jam bisa dijumlah.
 
+## Trial sebulan (mulai 23 Agustus 2026)
+
+Pemilik menjalankan uji pakai sebulan dengan lingkup **absensi dan rekap saja**
+— cuti, fee, dan slip belum dipakai. Shift sengaja **belum ditetapkan**, jadi
+selama trial ini kolom **terlambat, lembur, dan alpa akan selalu nol** dan
+logikanya tidak ikut teruji (lihat `hitungAlpa`: tanpa shift maupun roster,
+seseorang tidak punya jadwal sehingga tidak bisa alpa). Radius geofence masih
+500 m di ketiga cabang, jadi penolakan karena di luar area praktis tidak akan
+pernah terjadi.
+
+Yang benar-benar teruji sebulan ini: clock in/out, foto berwatermark,
+pembacaan lokasi, jam kerja, riwayat karyawan, dan rekap admin.
+
 ## Keputusan yang sengaja diambil
 
 - **Kepala Unit dan Admin/HRD mendapat seluruh modul admin sebagai bawaan**,
@@ -81,6 +94,10 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
 - **Pemilik, admin, dan super admin tidak pernah dituntut hadir**
   (`PERAN_TANPA_ABSEN`). Mereka dikeluarkan dari hitungan "belum absen",
   jumlah karyawan wajib absen, dan perhitungan alpa.
+- **Gagal menyimpan foto tidak membatalkan absen.** Barisnya tetap ditulis
+  tanpa foto dan ditandai `FOTO_GAGAL` sehingga masuk antrean Tinjau Anomali.
+  Orangnya sudah berdiri di klinik; kehadirannya tidak boleh hilang hanya
+  karena berkasnya gagal naik.
 - **WFH bukan pengajuan.** Ia kewenangan yang melekat pada peran Kepala Unit —
   boleh absen dari luar area, foto tetap wajib, hari itu ditandai `WFH`.
 

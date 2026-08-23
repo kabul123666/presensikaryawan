@@ -126,6 +126,31 @@ async function muatSemuaLokasi(pengguna: PenggunaSesi) {
 }
 
 /**
+ * Menyimpan foto absensi tanpa pernah membatalkan absennya.
+ *
+ * Sebelumnya `storage().put()` dipanggil tanpa penangkap galat dan sebelum
+ * baris absensi ditulis: satu gangguan penyimpanan — kuota habis, jaringan
+ * putus — membuat karyawan tidak bisa absen sama sekali, dan yang muncul cuma
+ * galat server tanpa penjelasan.
+ *
+ * Orangnya sudah berdiri di klinik; kehadirannya fakta yang tidak boleh hilang
+ * hanya karena berkasnya gagal naik. Fotonya dikosongkan, absennya tetap
+ * tercatat, dan barisnya ditandai supaya masuk antrean Tinjau Anomali —
+ * hilangnya bukti foto tetap terlihat, tidak diam-diam.
+ */
+async function simpanFotoAbsensi(
+  kunci: string,
+  isi: Buffer,
+): Promise<{ kunci: string | null; gagal: boolean }> {
+  try {
+    await storage().put(kunci, isi, "image/jpeg");
+    return { kunci, gagal: false };
+  } catch {
+    return { kunci: null, gagal: true };
+  }
+}
+
+/**
  * Memilih cabang yang dipakai menilai absensi kali ini.
  *
  * Karyawan lintas cabang bisa berdiri di dekat cabang mana pun, jadi yang
@@ -289,8 +314,11 @@ export async function aksiClockIn(
     namaKaryawan: pengguna.nama,
   });
 
-  const kunci = kunciFotoAbsensi(pengguna.employeeId, tanggal, "masuk");
-  await storage().put(kunci, fotoJadi, "image/jpeg");
+  const simpanan = await simpanFotoAbsensi(
+    kunciFotoAbsensi(pengguna.employeeId, tanggal, "masuk"),
+    fotoJadi,
+  );
+  if (simpanan.gagal) flags.push("FOTO_GAGAL");
 
   const [baris] = await db
     .insert(attendances)
@@ -300,7 +328,7 @@ export async function aksiClockIn(
       shiftId: shift?.id ?? null,
       status: nilai.status,
       clockInAt: sekarang,
-      clockInPhoto: kunci,
+      clockInPhoto: simpanan.kunci,
       clockInLat: posisi.lat,
       clockInLng: posisi.lng,
       clockInAccuracy: posisi.akurasi,
@@ -431,10 +459,13 @@ export async function aksiClockOut(
     namaKaryawan: pengguna.nama,
   });
 
-  const kunci = kunciFotoAbsensi(pengguna.employeeId, aktif.tanggal, "pulang");
-  await storage().put(kunci, fotoJadi, "image/jpeg");
+  const simpanan = await simpanFotoAbsensi(
+    kunciFotoAbsensi(pengguna.employeeId, aktif.tanggal, "pulang"),
+    fotoJadi,
+  );
 
   const flags = [...aktif.flags];
+  if (simpanan.gagal && !flags.includes("FOTO_GAGAL")) flags.push("FOTO_GAGAL");
   const penandaPulang = wfh ? "WFH" : "DILUAR_AREA_PULANG";
   if (geo.diLuarArea && !flags.includes(penandaPulang)) {
     flags.push(penandaPulang);
@@ -445,7 +476,7 @@ export async function aksiClockOut(
     .set({
       status: nilai.status,
       clockOutAt: sekarang,
-      clockOutPhoto: kunci,
+      clockOutPhoto: simpanan.kunci,
       clockOutLat: posisi.lat,
       clockOutLng: posisi.lng,
       clockOutAccuracy: posisi.akurasi,

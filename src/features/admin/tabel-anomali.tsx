@@ -21,10 +21,11 @@ export const LABEL_FLAG: Record<string, string> = {
   TANPA_SHIFT: "Tanpa shift terjadwal",
   LOKASI_MELOMPAT: "Lokasi melompat",
   WFH: "Bekerja dari rumah",
+  FOTO_GAGAL: "Foto gagal tersimpan",
 };
 
 /** Penanda yang menuntut perhatian lebih, diwarnai berbeda. */
-const BERAT = new Set(["MOCK_GPS", "LOKASI_MELOMPAT", "DILUAR_AREA"]);
+const BERAT = new Set(["MOCK_GPS", "LOKASI_MELOMPAT", "DILUAR_AREA", "FOTO_GAGAL"]);
 
 export type BarisAnomali = {
   id: string;
