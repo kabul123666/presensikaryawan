@@ -161,7 +161,10 @@ export default async function BerandaKaryawan() {
             </div>
           )}
 
-          <MenuUtama pilihan={karyawan?.menuBeranda} />
+          <MenuUtama
+            pilihan={karyawan?.menuBeranda}
+            kepalaUnit={pengguna.role === "MANAGER"}
+          />
         </div>
 
         <div>

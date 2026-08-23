@@ -24,7 +24,10 @@ export type SaringanAnomali = "BELUM" | "SUDAH" | "SEMUA";
 
 /** Baris yang dianggap anomali: berpenanda, atau menggantung tanpa clock out. */
 function syaratAnomali() {
-  return sql`(jsonb_array_length(${attendances.flags}) > 0 or (${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null and ${attendances.tanggal} < ${tanggalWIB()}))`;
+  // Penanda WFH dikeluarkan dari hitungan: kepala unit yang absen dari rumah
+  // memang sudah diizinkan, jadi memasukkannya ke antrean tinjau hanya membuat
+  // daftar yang tidak pernah selesai diperiksa.
+  return sql`((${attendances.flags} - 'WFH') <> '[]'::jsonb or (${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null and ${attendances.tanggal} < ${tanggalWIB()}))`;
 }
 
 export async function daftarAnomali(saringan: SaringanAnomali = "BELUM", batas = 100) {

@@ -28,7 +28,10 @@ export default async function HalamanMenu() {
         <h1 className="text-body mt-3 text-[18px] font-bold lg:mt-2">Semua Menu</h1>
       </header>
 
-      <MenuAplikasi penyetuju={PERAN_PENYETUJU.includes(pengguna.role)} />
+      <MenuAplikasi
+        penyetuju={PERAN_PENYETUJU.includes(pengguna.role)}
+        kepalaUnit={pengguna.role === "MANAGER"}
+      />
     </div>
   );
 }

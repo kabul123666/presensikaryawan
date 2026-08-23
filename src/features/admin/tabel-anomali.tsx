@@ -20,6 +20,7 @@ export const LABEL_FLAG: Record<string, string> = {
   HARI_LIBUR: "Absen di hari libur",
   TANPA_SHIFT: "Tanpa shift terjadwal",
   LOKASI_MELOMPAT: "Lokasi melompat",
+  WFH: "Bekerja dari rumah",
 };
 
 /** Penanda yang menuntut perhatian lebih, diwarnai berbeda. */

@@ -6,8 +6,8 @@ import {
   IconCuti,
   IconFee,
   IconKamera,
+  IconBeranda,
   IconKaryawan,
-  IconKeamanan,
   IconLaporan,
   IconLembur,
   IconLokasi,
@@ -26,6 +26,8 @@ type Menu = {
   href?: string;
   /** Hanya tampil bagi yang berwenang menyetujui. */
   penyetuju?: boolean;
+  /** Hanya tampil bagi kepala unit. */
+  kepalaUnit?: boolean;
   /** Ikut tampil di beranda; sisanya hanya ada di halaman Lainnya. */
   utama?: boolean;
 };
@@ -91,7 +93,13 @@ const KELOMPOK: { judul: string; menu: Menu[] }[] = [
         utama: true,
       },
       { kunci: "dinas", label: "Dinas", Ikon: IconLokasi },
-      { kunci: "wfh", label: "WFH", Ikon: IconKeamanan },
+      {
+        kunci: "wfh",
+        label: "WFH",
+        href: "/wfh",
+        Ikon: IconBeranda,
+        kepalaUnit: true,
+      },
       {
         kunci: "persetujuan",
         label: "Persetujuan",
@@ -190,7 +198,13 @@ export const SEMUA_MENU = KELOMPOK.flatMap((k) => k.menu);
 /** Susunan bawaan bagi karyawan yang belum pernah mengubah berandanya. */
 export const MENU_BAWAAN = SEMUA_MENU.filter((m) => m.utama).map((m) => m.kunci);
 
-export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
+export function MenuUtama({
+  pilihan,
+  kepalaUnit = false,
+}: {
+  pilihan?: string[] | null;
+  kepalaUnit?: boolean;
+}) {
   const dipilih = pilihan?.length ? pilihan : MENU_BAWAAN;
 
   // Kunci yang tidak dikenal diabaikan, sehingga menghapus sebuah menu dari
@@ -198,6 +212,7 @@ export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
   const utama = dipilih
     .map((k) => SEMUA_MENU.find((m) => m.kunci === k))
     .filter((m): m is Menu => Boolean(m))
+    .filter((m) => !m.kepalaUnit || kepalaUnit)
     .slice(0, 7);
 
   return (
@@ -232,11 +247,19 @@ export function MenuUtama({ pilihan }: { pilihan?: string[] | null }) {
   );
 }
 
-export function MenuAplikasi({ penyetuju }: { penyetuju: boolean }) {
+export function MenuAplikasi({
+  penyetuju,
+  kepalaUnit,
+}: {
+  penyetuju: boolean;
+  kepalaUnit: boolean;
+}) {
   return (
     <div className="mt-6 space-y-6 px-5 lg:mt-5 lg:px-0">
       {KELOMPOK.map((k) => {
-        const menu = k.menu.filter((m) => !m.penyetuju || penyetuju);
+        const menu = k.menu.filter(
+          (m) => (!m.penyetuju || penyetuju) && (!m.kepalaUnit || kepalaUnit),
+        );
         if (menu.length === 0) return null;
 
         return (

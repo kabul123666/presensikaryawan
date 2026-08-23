@@ -247,17 +247,25 @@ export default async function HalamanPresensi({
                       </div>
                     </div>
 
-                    {(d.menitTerlambat > 0 || d.clockInOutsideArea) && (
+                    {(d.menitTerlambat > 0 ||
+                      d.clockInOutsideArea ||
+                      d.flags.includes("WFH")) && (
                       <div className="border-app space-y-1 border-t px-4 py-2.5">
                         {d.menitTerlambat > 0 && (
                           <p className="text-status-late text-[12px] font-semibold">
                             Terlambat {d.menitTerlambat} menit
                           </p>
                         )}
-                        {d.clockInOutsideArea && (
-                          <p className="text-status-absent text-[12px] font-semibold">
-                            Absen di luar area ({d.clockInDistanceM} m)
+                        {d.flags.includes("WFH") ? (
+                          <p className="text-status-leave text-[12px] font-semibold">
+                            Bekerja dari rumah ({d.clockInDistanceM} m dari klinik)
                           </p>
+                        ) : (
+                          d.clockInOutsideArea && (
+                            <p className="text-status-absent text-[12px] font-semibold">
+                              Absen di luar area ({d.clockInDistanceM} m)
+                            </p>
+                          )
                         )}
                       </div>
                     )}

@@ -228,9 +228,25 @@ export async function aksiClockIn(
   }
   const { lokasi, geo } = terpilih;
 
-  if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
-  if (geo.butuhAlasan && !posisi.alasan) {
-    return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
+  /*
+   * Kepala unit boleh absen dari luar area — itulah bentuk WFH di sini.
+   *
+   * Tidak dibuat sebagai pengajuan tersendiri: yang dibutuhkan cuma satu orang
+   * yang sesekali bekerja dari rumah, dan memaksanya mengajukan sehari
+   * sebelumnya justru membuat hari yang mendadak jadi tidak tercatat sama
+   * sekali. Alurnya sama persis dengan absen biasa, foto selfie tetap wajib,
+   * hanya pemeriksaan jaraknya yang dilewati.
+   *
+   * Peran lain tidak ikut: bagi mereka kebijakan geofence lokasi berlaku apa
+   * adanya, termasuk penolakan bila lokasinya berkebijakan BLOCK.
+   */
+  const wfh = pengguna.role === "MANAGER" && geo.diLuarArea;
+
+  if (!wfh) {
+    if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
+    if (geo.butuhAlasan && !posisi.alasan) {
+      return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
+    }
   }
 
   // Tanpa shift tidak ada jam masuk untuk dibandingkan, jadi kehadiran dicatat
@@ -249,7 +265,9 @@ export async function aksiClockIn(
   // Penanda anomali untuk ditinjau admin, tidak memblokir absen.
   const flags: string[] = [];
   if (posisi.mockLocation) flags.push("MOCK_GPS");
-  if (geo.diLuarArea) flags.push("DILUAR_AREA");
+  // WFH bukan anomali, jadi ditandai berbeda supaya tidak mengotori antrean
+  // tinjau admin dengan kejadian yang memang sudah diizinkan.
+  if (geo.diLuarArea) flags.push(wfh ? "WFH" : "DILUAR_AREA");
   if (libur) flags.push("HARI_LIBUR");
   if (!shift) {
     flags.push("TANPA_SHIFT");
@@ -365,9 +383,14 @@ export async function aksiClockOut(
   }
   const { lokasi, geo } = terpilih;
 
-  if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
-  if (geo.butuhAlasan && !posisi.alasan) {
-    return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
+  // Sama seperti absen masuk: kepala unit boleh menutup harinya dari rumah.
+  const wfh = pengguna.role === "MANAGER" && geo.diLuarArea;
+
+  if (!wfh) {
+    if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
+    if (geo.butuhAlasan && !posisi.alasan) {
+      return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
+    }
   }
 
   // --- Tindakan: nominal fee SELALU diambil dari master data di server.
@@ -412,8 +435,9 @@ export async function aksiClockOut(
   await storage().put(kunci, fotoJadi, "image/jpeg");
 
   const flags = [...aktif.flags];
-  if (geo.diLuarArea && !flags.includes("DILUAR_AREA_PULANG")) {
-    flags.push("DILUAR_AREA_PULANG");
+  const penandaPulang = wfh ? "WFH" : "DILUAR_AREA_PULANG";
+  if (geo.diLuarArea && !flags.includes(penandaPulang)) {
+    flags.push(penandaPulang);
   }
 
   await db
