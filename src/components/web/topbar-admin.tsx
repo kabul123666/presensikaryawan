@@ -27,7 +27,7 @@ export function TopbarAdmin({
 
   return (
     <header className="bg-surface/85 border-app sticky top-0 z-20 border-b backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 pr-5 pl-16 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-5 lg:px-8">
         <p className="text-muted hidden text-[13px] font-medium sm:block">
           {jam ? `${jam} WIB` : " "}
         </p>
