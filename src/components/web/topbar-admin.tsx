@@ -26,7 +26,7 @@ export function TopbarAdmin({
   const gelap = useGelapAktif();
 
   return (
-    <header className="bg-surface/85 border-app sticky top-0 z-20 border-b backdrop-blur-xl">
+    <header className="bg-surface/85 border-app z-20 shrink-0 border-b backdrop-blur-xl lg:sticky lg:top-0">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-5 lg:px-8">
         <p className="text-muted hidden text-[13px] font-medium sm:block">
           {jam ? `${jam} WIB` : " "}

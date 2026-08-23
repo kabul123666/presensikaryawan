@@ -22,8 +22,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const ringkas = await ringkasanHariIni();
   const izin = await aksesMenuPengguna(pengguna);
 
+  /*
+   * Di ponsel tinggi kerangka dikunci ke tinggi layar dan hanya area isi yang
+   * bergulir, sehingga bilah menu bawah cukup jadi elemen flex biasa.
+   *
+   * Sebelumnya bilah itu `position: fixed`, dan di peramban ponsel bilah
+   * alamat yang menciut lalu mengembang saat digulir ikut menggeser elemen
+   * fixed — menunya terlihat naik-turun, bahkan sempat hilang di bawah lipatan.
+   * Pola yang sama sudah dipakai aplikasi karyawan dan tidak pernah bermasalah.
+   *
+   * Mulai lebar lg semuanya kembali ke aliran dokumen biasa: sidebar melayang
+   * di kiri, halaman bergulir seperti halaman web pada umumnya.
+   */
   return (
-    <div className="bg-app min-h-dvh">
+    <div className="bg-app flex h-dvh flex-col overflow-hidden lg:block lg:h-auto lg:min-h-dvh lg:overflow-visible">
       <SidebarAdmin
         badge={{
           persetujuan: ringkas.menungguPersetujuan,
@@ -32,14 +44,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         izin={izin}
       />
 
-      <div className="lg:pl-[248px]">
+      <div className="flex min-h-0 flex-1 flex-col lg:block lg:pl-[248px]">
         <TopbarAdmin
           nama={pengguna.nama}
           peran={pengguna.role}
           jabatan={pengguna.namaJabatan}
         />
-        <main className="mx-auto max-w-[1400px] px-5 pt-5 pb-24 lg:px-8 lg:py-6">
-          {children}
+        <main className="scrollbar-slim min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible">
+          <div className="mx-auto max-w-[1400px] px-5 pt-5 pb-6 lg:px-8 lg:py-6">
+            {children}
+          </div>
         </main>
         <footer className="text-subtle border-app mt-8 hidden border-t px-5 py-5 text-xs lg:block lg:px-8">
           Presensi Karyawan ·{" "}

@@ -107,6 +107,12 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
   membacanya dari aturan — akibatnya aturan berjenjang tersimpan rapi tapi
   tidak pernah berlaku. Setiap tempat baru yang membuat baris `requests` wajib
   memanggilnya.
+- **Jangan pakai `position: fixed` untuk bilah menu di ponsel.** Bilah alamat
+  peramban yang menciut saat digulir ikut menggesernya, sehingga menunya
+  terlihat naik-turun bahkan hilang di bawah lipatan. Pola yang dipakai
+  aplikasi karyawan maupun panel admin: kerangka setinggi `h-dvh`, hanya area
+  isi yang bergulir, bilah menu jadi elemen flex biasa di dasarnya — halamannya
+  sendiri tidak pernah bergulir, jadi bilah alamat tidak berpengaruh.
 - **Halaman admin dijaga `wajibAksesMenu("<kunci>")`, bukan `wajibPeran`.**
   Halaman admin baru wajib memakainya, dan kuncinya didaftarkan di
   `src/components/web/menu-admin.tsx` serta `SEMUA_KUNCI_MENU` di

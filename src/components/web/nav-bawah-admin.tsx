@@ -20,6 +20,10 @@ import { cn } from "@/lib/utils";
  * seluruh menunya tersembunyi sampai seseorang ingat menekan ikon di pojok.
  * Untuk memantau kehadiran sambil berjalan, empat tujuan yang paling sering
  * dibuka pantas selalu terlihat, dan sisanya dikumpulkan di halaman Menu.
+ *
+ * Bukan `position: fixed`, melainkan elemen flex biasa di dasar kerangka
+ * setinggi layar (lihat layout admin). Elemen fixed ikut tergeser bilah alamat
+ * peramban ponsel yang menciut saat digulir, dan menunya terlihat naik-turun.
  */
 type Tujuan = { href: string; label: string; Ikon: LucideIcon; exact?: boolean };
 
@@ -37,7 +41,7 @@ export function NavBawahAdmin({ menunggu }: { menunggu: number }) {
   return (
     <nav
       aria-label="Navigasi admin"
-      className="border-app bg-surface pb-safe fixed inset-x-0 bottom-0 z-30 border-t lg:hidden"
+      className="border-app bg-surface pb-safe shrink-0 border-t lg:hidden"
     >
       <ul className="grid grid-cols-5">
         {MENU.map((m) => {
