@@ -63,6 +63,21 @@ sebagai admin. Periksa sekali sebelum dipakai sungguhan:
 3. **Unduh Excel** di Rekap Absensi — sekarang dua lembar; pastikan lembar
    "Rincian Tindakan" terisi dan kolom menit/jam bisa dijumlah.
 
+## Keputusan yang sengaja diambil
+
+- **Ikatan perangkat dicabut** atas permintaan pemilik. Aplikasi boleh dibuka
+  dan dipasang di perangkat mana pun. Kolom `employees.device_fingerprint` dan
+  jenis pengajuan `DEVICE_CHANGE` sengaja disisakan supaya baris lama tetap
+  terbaca, tetapi keduanya tidak pernah diisi lagi. Penanda `DEVICE_BARU` juga
+  tidak dipasang lagi; labelnya disisakan agar absensi lama tetap terbaca di
+  halaman anomali. Jangan menghidupkannya kembali tanpa diminta.
+- **Umur sesi dibedakan**: tujuh hari untuk karyawan, satu hari untuk akun yang
+  bisa melihat data seluruh karyawan. Risiko terbesar di klinik bukan
+  pembobolan dari luar, melainkan sesi admin yang tertinggal terbuka di
+  perangkat bersama.
+- **Mengganti password mencabut seluruh sesi**, lalu membuat satu sesi baru
+  untuk yang sedang menggantinya.
+
 ## Jebakan yang sudah diketahui
 
 - **`.env.local` menunjuk database produksi.** `npm run db:reset` di komputer
@@ -101,7 +116,8 @@ admin · beranda bergaya aplikasi kepegawaian · menu pilihan yang bisa diatur
 karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · halaman
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
 persetujuan dua langkah (Kepala Unit lalu Admin/HRD) untuk cuti, izin, lembur,
-dan koreksi absen · larangan menyetujui pengajuan sendiri ·
+dan koreksi absen · larangan menyetujui pengajuan sendiri · keluar dari semua
+perangkat ·
 dan formulir pengajuan per jenis · tampilan desktop untuk karyawan (sidebar +
 dua kolom) · layar absen bergaya peta penuh di menu Presensi · rekap kehadiran
 berbentuk kartu per hari · pemilih warna aplikasi · periode rekap mengikuti
