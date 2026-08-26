@@ -12,7 +12,7 @@ strict, Tailwind v4, Drizzle ORM. Seluruh antarmuka berbahasa Indonesia.
 | --------------- | --------------------------------------------------------------- |
 | Produksi        | https://presensikaryawan-eight.vercel.app                       |
 | Repo            | https://github.com/kabul123666/presensikaryawan                 |
-| Commit terakhir | `569f616`                                                       |
+| Commit terakhir | `a5c00b8` (23 Agustus 2026)                                     |
 | Hosting         | Vercel, proyek `presensikaryawan`, akun `tyashalihaa@gmail.com` |
 | Database        | Neon Postgres lewat integrasi Vercel                            |
 | Foto            | Vercel Blob (privat), disajikan lewat `/api/berkas`             |
@@ -24,27 +24,46 @@ dikerjakan manual.
 
 ## Akun
 
-| Peran               | Username   | Password           |
-| ------------------- | ---------- | ------------------ |
-| Administrator       | `admin`    | `wjyZxcReyER3uU8k` |
-| Uji coba (karyawan) | `uji.coba` | `6n2icemdbt`       |
+| Peran               | Username       | Catatan                                |
+| ------------------- | -------------- | -------------------------------------- |
+| Super Admin         | `admin`        | password `wjyZxcReyER3uU8k`            |
+| Pemilik             | `drg_mira`     | drg. Mira — pemilik ketiga cabang      |
+| Kepala Unit         | `tyah_shaliha` | Manager Poli Gigi, ditugaskan 3 cabang |
+| Uji coba (karyawan) | `uji.coba`     | password `6n2icemdbt`                  |
 
-Akun uji sengaja dibuat atas permintaan pemilik proyek untuk mencoba aplikasi,
-memakai lokasi Alia Hospital Depok dan shift Pagi. Hapus bila tidak diperlukan
-lagi.
+Akun uji sengaja dibuat atas permintaan pemilik proyek, memakai lokasi Alia
+Hospital Depok dan shift Pagi. Hapus bila tidak diperlukan lagi.
+
+**Sesi asisten tidak pernah mengisi password.** Karena itu sebagian layar admin
+hanya bisa diperiksa bila pemilik proyek login sendiri di panel pratinjau.
+Kalau perlu memverifikasi sesuatu di sisi admin, minta ia masuk lebih dulu.
+
+## Keadaan data per 27 Agustus 2026
+
+|                                            |                                               |
+| ------------------------------------------ | --------------------------------------------- |
+| Karyawan aktif                             | 10                                            |
+| Wajib absen (di luar pemilik/admin)        | 8, **7 di antaranya tanpa shift**             |
+| Shift terdefinisi                          | 1                                             |
+| Absensi tercatat                           | 21 baris, terakhir 26 Agustus                 |
+| Pengajuan                                  | 2                                             |
+| Aturan persetujuan aktif                   | 4 (cuti, izin, lembur, koreksi — dua langkah) |
+| Jenis cuti · katalog tindakan · hari libur | 0 · 0 · 0                                     |
+| Baris `settings` tersimpan                 | 0 — seluruh kebijakan masih nilai bawaan      |
+| Radius geofence                            | 500 m di ketiga cabang                        |
 
 ## Yang menghambat pemakaian sungguhan
 
 1. **Belum ada jenis cuti** di database, sehingga pengajuan cuti dan izin belum
    bisa dibuat siapa pun. Diisi pemilik lewat Pengaturan → Cuti; jangan diisi
    sendiri karena kuota cuti adalah keputusan kebijakan.
-2. **Shift belum ditetapkan** untuk delapan dari sembilan karyawan, dan hanya
-   satu shift yang terdefinisi. Akibatnya kehadiran tercatat tetapi tidak
-   pernah dinilai terlambat — semua otomatis berstatus Tepat Waktu. Jam shift
-   adalah keputusan kebijakan, jadi harus diisi pemilik.
-3. **Katalog tindakan masih kosong** padahal tujuh karyawan berjabatan yang
-   mencatat fee. Saat clock out mereka disodori daftar kosong dan feenya selalu
-   nol. Tarif adalah keputusan kebijakan.
+2. **Shift belum ditetapkan** untuk tujuh dari delapan karyawan wajib absen,
+   dan hanya satu shift yang terdefinisi. Akibatnya kehadiran tercatat tetapi
+   tidak pernah dinilai terlambat maupun lembur. Jam shift adalah keputusan
+   kebijakan, jadi harus diisi pemilik — lihat bagian Trial di bawah.
+3. **Katalog tindakan masih kosong** padahal tiga jabatan mencatat fee. Saat
+   clock out mereka disodori daftar kosong dan feenya selalu nol. Tarif adalah
+   keputusan kebijakan.
 4. **Radius geofence 500 m di ketiga cabang** — cukup longgar untuk absen dari
    seberang jalan. Perlu ditinjau pemilik.
 5. **Vercel Hobby melarang pemakaian komersial.** Untuk dipakai operasional
@@ -52,16 +71,17 @@ lagi.
 
 ## Belum sempat diperiksa langsung
 
-Tiga fitur admin di bawah ini lolos typecheck, lint, dan `next build`, tetapi
-**belum pernah dibuka di peramban** — sesi yang membangunnya tidak bisa masuk
-sebagai admin. Periksa sekali sebelum dipakai sungguhan:
+Dua fitur admin di bawah ini lolos typecheck, lint, dan `next build`, tetapi
+**belum pernah dijalankan sungguhan** — belum ada yang menekan tombolnya.
+Periksa sekali sebelum dipakai untuk periode gaji:
 
-1. **Kunci periode** di Rekap Absensi — coba kunci satu periode lama, pastikan
+1. **Kunci periode** di Rekap Absensi — kunci satu periode lama, pastikan
    angkanya membeku dan koreksi absen untuk tanggal itu ditolak.
-2. **Tinjau Anomali** (`/admin/anomali`) — penandaan massal dan tombol
-   mengembalikan baris ke antrean.
-3. **Unduh Excel** di Rekap Absensi — sekarang dua lembar; pastikan lembar
-   "Rincian Tindakan" terisi dan kolom menit/jam bisa dijumlah.
+2. **Unduh Excel** di Rekap Absensi — dua lembar; pastikan lembar "Rincian
+   Tindakan" terisi dan kolom menit/jam bisa dijumlah di Excel.
+
+Tinjau Anomali sudah diperiksa (daftar, hitungan, dan penyaringan per cabang
+terbukti bekerja); yang belum dicoba hanya penandaan massalnya.
 
 ## Trial sebulan (mulai 23 Agustus 2026)
 
@@ -75,6 +95,13 @@ pernah terjadi.
 
 Yang benar-benar teruji sebulan ini: clock in/out, foto berwatermark,
 pembacaan lokasi, jam kerja, riwayat karyawan, dan rekap admin.
+
+**Asimetri yang wajib diingat bila shift ditetapkan di tengah periode:**
+terlambat dan lembur **dibekukan saat absen terjadi** (`nilaiClockIn` jalan
+sekali lalu disimpan), jadi hari-hari sebelumnya tetap nol selamanya. Alpa
+sebaliknya **dihitung ulang tiap rekap dibuka**, jadi begitu shift ditetapkan
+alpa langsung muncul mundur ke belakang — termasuk tanggal sebelum shift itu
+dibuat. Saran: tetapkan shift di awal periode berikutnya, bukan di tengah.
 
 ## Keputusan yang sengaja diambil
 
@@ -170,15 +197,15 @@ Manager ke departemennya · penugasan lintas cabang · penggantian password oleh
 admin · beranda bergaya aplikasi kepegawaian · menu pilihan yang bisa diatur
 karyawan · bilah bawah bertombol tengah · profil berfoto dengan stiker · halaman
 pengaturan akun · peta area absen dengan pemantauan GPS berkelanjutan · daftar
-persetujuan dua langkah (Kepala Unit lalu Admin/HRD) untuk cuti, izin, lembur,
-dan koreksi absen · larangan menyetujui pengajuan sendiri · keluar dari semua
-perangkat · WFH untuk kepala unit · panel admin bentuk mobile · pengaturan hak
-akses menu per peran ·
-dan formulir pengajuan per jenis · tampilan desktop untuk karyawan (sidebar +
-dua kolom) · layar absen bergaya peta penuh di menu Presensi · rekap kehadiran
-berbentuk kartu per hari · pemilih warna aplikasi · periode rekap mengikuti
-siklus gaji · kunci periode · antrean tinjau anomali · ekspor rekap berikut
-rincian fee.
+dan formulir pengajuan per jenis · persetujuan dua langkah (Kepala Unit lalu
+Admin/HRD) untuk cuti, izin, lembur, dan koreksi absen · larangan menyetujui
+pengajuan sendiri · keluar dari semua perangkat · WFH untuk kepala unit ·
+peran Pemilik dengan batas cabang · tampilan desktop untuk karyawan (sidebar +
+dua kolom) · panel admin bentuk mobile · pengaturan hak akses menu per peran ·
+layar absen bergaya peta penuh di menu Presensi · rekap kehadiran berbentuk
+kartu per hari · pemilih warna aplikasi · ikon menu datar · periode rekap
+mengikuti siklus gaji · kunci periode · antrean tinjau anomali · ekspor rekap
+berikut rincian fee.
 
 Tampilan karyawan punya dua bentuk dari satu berkas halaman. Di bawah lebar
 `lg` (1024px): satu kolom selebar 430px dengan bilah bawah, seperti sebelumnya.
@@ -189,12 +216,16 @@ baru, ikuti pola yang sama — jangan membuat berkas terpisah untuk desktop.
 
 ## Belum dikerjakan
 
-- **Tampilan halaman lain belum dirombak**: Fee Saya, Jadwal, dan seluruh
-  panel admin masih tampilan lama. Pemilik meminta semuanya mengikuti pola
-  aplikasi kepegawaian seperti Talenta/Epployee.
-- **Menu bertanda "Segera"** — fiturnya belum ada sama sekali: Dinas, WFH,
+- **Isi halaman admin belum dirombak.** Kerangkanya sudah berbentuk mobile dan
+  tabelnya tidak lagi terpotong, tetapi isinya masih tabel padat — belum
+  bergaya kartu seperti sisi karyawan. Fee Saya dan Jadwal juga masih tampilan
+  lama.
+- **Menu bertanda "Segera"** — fiturnya belum ada sama sekali: Dinas,
   Aktivitas Harian, Claim, Bonus, Slip Gaji, Perjalanan Dinas, Performance,
-  dan Tugas di bilah bawah.
+  dan Tugas di bilah bawah. (WFH sudah dirilis.)
+- **Beberapa ikon menu masih kembar maknanya**: bagan batang dipakai untuk
+  Jadwal Shift, Slip Insentif, dan Slip Gaji; dompet untuk Fee Saya, Claim, dan
+  Bonus. Pemetaannya ada di `src/components/mobile/menu-aplikasi.tsx`.
 - **Pilihan warna aplikasi tinggal di localStorage**, bukan di basis data —
   sama seperti terang/gelap. Karyawan yang berganti perangkat mulai dari hijau
   lagi. Kalau nanti dianggap perlu ikut akun, itu perubahan tersendiri.
@@ -202,7 +233,13 @@ baru, ikuti pola yang sama — jangan membuat berkas terpisah untuk desktop.
   dan email sudah ada di basis data tetapi belum ada layar pengisinya, sehingga
   masih tampil sebagai tanda hubung di profil.
 - **Retensi foto absensi tidak berjalan** — setelannya ada di Pengaturan tetapi
-  belum ada penjadwal yang menghapus foto lama.
+  belum ada penjadwal yang menghapus foto lama. `buatThumbnail()` di
+  `src/lib/foto.ts` sudah ditulis tetapi tidak pernah dipanggil; dengan foto
+  720×960 (~80 KB) dan 12 karyawan, penyimpanan tumbuh ±50 MB per bulan.
+- **Penyetuju berperan Kepala Unit belum bisa membuka lampiran pengajuan.**
+  `/api/berkas` membatasi ke `bolehKelolaSemua` (Admin dan Super Admin saja),
+  jadi surat dokter pada pengajuan cuti tidak bisa dibuka penyetuju. Belum
+  menggigit karena jenis cuti masih kosong.
 - **`docs/PRD.md` masih memuat nama Alia** di banyak tempat; dokumen lain sudah
   dibersihkan.
 - **Proyek `presensikaryawan-lama` di Vercel** belum dihapus.
@@ -221,3 +258,20 @@ Aturan lengkap ada di `CLAUDE.md`. Yang paling sering terpakai:
 
 Pemilik proyek ingin perubahan langsung dikerjakan, bukan ditawarkan berulang,
 dan setiap selesai langsung didorong ke GitHub agar Vercel menyebarkannya.
+
+## Cara memverifikasi
+
+Jalankan server lewat panel pratinjau (`preview_start` dengan konfigurasi
+`aliapresensi` di `.claude/launch.json`), bukan lewat `npm run dev` di Bash.
+Verifikasi paling murah dan paling dapat dipercaya adalah membaca DOM lewat
+JavaScript — lebar elemen, kelas yang aktif, status `fetch` sebuah rute —
+bukan menebak dari tangkapan layar, yang ukuran bingkainya sering tidak sesuai
+dengan viewport sebenarnya.
+
+Untuk memastikan sebuah pembatasan benar-benar berlaku (bukan sekadar menu yang
+disembunyikan), ubah datanya sementara, panggil rutenya lewat `fetch` dan
+periksa apakah dialihkan ke `/tidak-berwenang`, lalu kembalikan datanya. Pola
+itu dipakai saat menguji hak akses menu dan batas cabang pemilik.
+
+Setelah menghapus berkas rute, hapus `.next/types` sebelum `tsc` — berkas
+validator lama menyisakan galat modul yang sudah tidak ada.
