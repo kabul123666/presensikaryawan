@@ -18,6 +18,7 @@ import {
   hariPekanWIB,
   jamKeMenit,
   menitHariWIB,
+  selisihHari,
   tanggalWIB,
 } from "@/lib/waktu";
 
@@ -182,9 +183,20 @@ export function nilaiClockOut(
   statusMasuk: AttendanceStatus,
 ) {
   const menitSekarang = menitHariWIB(waktu);
+  const menitMasuk = jamKeMenit(shift.jamMasuk);
   const menitPulang = jamKeMenit(shift.jamPulang);
-  const geser = shift.lintasHari && menitSekarang <= menitPulang ? 0 : 0;
-  const selisih = menitSekarang + geser - menitPulang;
+
+  /*
+   * Shift malam berakhir di tanggal berikutnya, jadi jam pulangnya digeser
+   * satu hari penuh dan jam sekarang ikut digeser bila sudah lewat tengah
+   * malam. Tanpa itu, pulang jam 06.10 dari shift 22.00–06.00 terbaca pulang
+   * cepat lima jam, sementara pulang jam 22.30 di malam yang sama terbaca
+   * lembur enam belas jam.
+   */
+  const akhirShift = shift.lintasHari ? menitPulang + 1440 : menitPulang;
+  const sekarangRelatif =
+    shift.lintasHari && menitSekarang < menitMasuk ? menitSekarang + 1440 : menitSekarang;
+  const selisih = sekarangRelatif - akhirShift;
 
   const durasiKotor = Math.round((waktu.getTime() - clockInAt.getTime()) / 60000);
   const durasiKerjaMenit = Math.max(0, durasiKotor - shift.istirahatMenit);
@@ -199,10 +211,52 @@ export function nilaiClockOut(
   return { status, menitLembur, durasiKerjaMenit, pulangCepat };
 }
 
-/** Baris absensi hari ini, plus baris terbuka dari shift malam kemarin. */
+/**
+ * Apakah sebuah sesi yang belum ditutup masih boleh dianggap berjalan hari ini.
+ *
+ * Hanya shift malam yang jam pulangnya memang jatuh di tanggal berikutnya.
+ * Batasnya jam pulang shift itu ditambah ambang lemburnya — keduanya angka
+ * milik shift, bukan angka yang ditulis di sini.
+ */
+async function sesiMalamMasihBerjalan(
+  baris: { tanggal: string; shiftId: string | null },
+  sekarang: Date,
+): Promise<boolean> {
+  if (!baris.shiftId) return false;
+  if (selisihHari(baris.tanggal, tanggalWIB(sekarang)) !== 1) return false;
+
+  const db = await getDb();
+  const [shift] = await db
+    .select()
+    .from(shifts)
+    .where(eq(shifts.id, baris.shiftId))
+    .limit(1);
+  if (!shift?.lintasHari) return false;
+
+  return menitHariWIB(sekarang) <= jamKeMenit(shift.jamPulang) + shift.ambangLemburMenit;
+}
+
+/**
+ * Baris absensi yang sedang berjalan untuk seorang karyawan.
+ *
+ * Sesi yang lupa ditutup tidak ikut terbawa ke hari berikutnya. Sebelumnya
+ * baris terbuka mana pun dianggap sesi berjalan, jadi orang yang kemarin lupa
+ * clock out membuka aplikasi pagi ini dan masih disodori tombol pulang —
+ * kehadirannya hari ini tidak bisa dicatat sama sekali, dan begitu ia menekan
+ * tombol itu jam kerjanya jadi hitungan dua hari.
+ *
+ * Yang tersisa terbuka tetap dibiarkan apa adanya, tidak ditutup diam-diam:
+ * jamnya tidak diketahui siapa pun, dan menebaknya berarti mengarang jam kerja
+ * yang ikut terbawa ke penggajian. Barisnya sudah masuk antrean Tinjau Anomali
+ * admin, dan karyawannya bisa membetulkan lewat Presensi Backdate.
+ *
+ * Perkecualiannya hanya shift malam, yang jam pulangnya di tanggal berikutnya
+ * memang bagian dari sesi yang sama.
+ */
 export async function absensiAktif(employeeId: string) {
   const db = await getDb();
-  const hariIni = tanggalWIB();
+  const sekarang = new Date();
+  const hariIni = tanggalWIB(sekarang);
 
   const [terbuka] = await db
     .select()
@@ -211,7 +265,10 @@ export async function absensiAktif(employeeId: string) {
     .orderBy(desc(attendances.tanggal))
     .limit(1);
 
-  if (terbuka) return terbuka;
+  if (terbuka) {
+    if (terbuka.tanggal === hariIni) return terbuka;
+    if (await sesiMalamMasihBerjalan(terbuka, sekarang)) return terbuka;
+  }
 
   const [hari] = await db
     .select()
