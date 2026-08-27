@@ -12,7 +12,7 @@ strict, Tailwind v4, Drizzle ORM. Seluruh antarmuka berbahasa Indonesia.
 | --------------- | --------------------------------------------------------------- |
 | Produksi        | https://presensikaryawan-eight.vercel.app                       |
 | Repo            | https://github.com/kabul123666/presensikaryawan                 |
-| Commit terakhir | `a5c00b8` (23 Agustus 2026)                                     |
+| Commit terakhir | `784f76e` (27 Agustus 2026)                                     |
 | Hosting         | Vercel, proyek `presensikaryawan`, akun `tyashalihaa@gmail.com` |
 | Database        | Neon Postgres lewat integrasi Vercel                            |
 | Foto            | Vercel Blob (privat), disajikan lewat `/api/berkas`             |
@@ -38,29 +38,36 @@ Hospital Depok dan shift Pagi. Hapus bila tidak diperlukan lagi.
 hanya bisa diperiksa bila pemilik proyek login sendiri di panel pratinjau.
 Kalau perlu memverifikasi sesuatu di sisi admin, minta ia masuk lebih dulu.
 
-## Keadaan data per 27 Agustus 2026
+## Keadaan data per 27 Agustus 2026 (sore)
 
-|                                            |                                               |
-| ------------------------------------------ | --------------------------------------------- |
-| Karyawan aktif                             | 10                                            |
-| Wajib absen (di luar pemilik/admin)        | 8, **7 di antaranya tanpa shift**             |
-| Shift terdefinisi                          | 1                                             |
-| Absensi tercatat                           | 21 baris, terakhir 26 Agustus                 |
-| Pengajuan                                  | 2                                             |
-| Aturan persetujuan aktif                   | 4 (cuti, izin, lembur, koreksi — dua langkah) |
-| Jenis cuti · katalog tindakan · hari libur | 0 · 0 · 0                                     |
-| Baris `settings` tersimpan                 | 0 — seluruh kebijakan masih nilai bawaan      |
-| Radius geofence                            | 500 m di ketiga cabang                        |
+|                                     |                                                          |
+| ----------------------------------- | -------------------------------------------------------- |
+| Karyawan aktif                      | 10                                                       |
+| Wajib absen (di luar pemilik/admin) | 7                                                        |
+| Shift terdefinisi                   | 9, dijadwalkan lewat roster (43 baris `shift_schedules`) |
+| Absensi tercatat                    | 24 baris, berjalan setiap hari                           |
+| Pengajuan                           | 7 (4 backdate, 2 lembur, 1 selesai)                      |
+| Aturan persetujuan aktif            | 4 (cuti, izin, lembur, koreksi — dua langkah)            |
+| Jenis cuti                          | 2 — Cuti Tahunan (12) dan Sakit (12, butuh lampiran)     |
+| Baris `leave_balances`              | **0** — lihat catatan di bawah                           |
+| Katalog tindakan · hari libur       | 0 · 0                                                    |
+| Baris `settings` tersimpan          | 0 — seluruh kebijakan masih nilai bawaan                 |
+| Radius geofence                     | 500 m di ketiga cabang, toleransi GPS 50–78 m            |
+| Karyawan lintas cabang              | hanya drg. Mira (3) dan Tyah (2); sisanya satu cabang    |
+
+Shift sudah ditetapkan lewat roster, jadi catatan lama bahwa "terlambat dan
+lembur selalu nol" **tidak berlaku lagi** — keduanya sudah terhitung.
 
 ## Yang menghambat pemakaian sungguhan
 
-1. **Belum ada jenis cuti** di database, sehingga pengajuan cuti dan izin belum
-   bisa dibuat siapa pun. Diisi pemilik lewat Pengaturan → Cuti; jangan diisi
-   sendiri karena kuota cuti adalah keputusan kebijakan.
-2. **Shift belum ditetapkan** untuk tujuh dari delapan karyawan wajib absen,
-   dan hanya satu shift yang terdefinisi. Akibatnya kehadiran tercatat tetapi
-   tidak pernah dinilai terlambat maupun lembur. Jam shift adalah keputusan
-   kebijakan, jadi harus diisi pemilik — lihat bagian Trial di bawah.
+1. **Belum ada jenis "Izin"** — yang ada hanya "Sakit", sehingga orang yang mau
+   izin biasa terpaksa memilih Sakit. Ditambahkan pemilik lewat Pengaturan →
+   Cuti dengan kuota **0**. Jenis berkuota 0 atau berlampiran otomatis masuk
+   ke tab Izin/Sakit dan tidak pernah memotong saldo.
+2. **"Sakit" masih berkuota 12.** Angkanya sekarang diabaikan — izin dan sakit
+   tidak lagi memotong kuota apa pun — tetapi selama masih di atas nol ia ikut
+   membuatkan baris saldo untuk karyawan baru dan terbaca membingungkan di
+   layar pengaturan. Sebaiknya diubah ke 0 oleh pemilik.
 3. **Katalog tindakan masih kosong** padahal tiga jabatan mencatat fee. Saat
    clock out mereka disodori daftar kosong dan feenya selalu nol. Tarif adalah
    keputusan kebijakan.
@@ -76,9 +83,11 @@ Dua fitur admin di bawah ini lolos typecheck, lint, dan `next build`, tetapi
 Periksa sekali sebelum dipakai untuk periode gaji:
 
 1. **Kunci periode** di Rekap Absensi — kunci satu periode lama, pastikan
-   angkanya membeku dan koreksi absen untuk tanggal itu ditolak.
-2. **Unduh Excel** di Rekap Absensi — dua lembar; pastikan lembar "Rincian
-   Tindakan" terisi dan kolom menit/jam bisa dijumlah di Excel.
+   angkanya membeku dan koreksi absen untuk tanggal itu ditolak. Sengaja belum
+   diuji sesi asisten: mengujinya berarti menulis baris kunci ke produksi.
+2. ~~Unduh Excel~~ — sudah diperiksa 27 Agustus: berkasnya sah, dua lembar,
+   kolom Izin ikut terbawa. Yang belum dipastikan hanya isi lembar "Rincian
+   Tindakan", karena katalog tindakannya masih kosong.
 
 Tinjau Anomali sudah diperiksa (daftar, hitungan, dan penyaringan per cabang
 terbukti bekerja); yang belum dicoba hanya penandaan massalnya.
@@ -125,6 +134,31 @@ dibuat. Saran: tetapkan shift di awal periode berikutnya, bukan di tengah.
   tanpa foto dan ditandai `FOTO_GAGAL` sehingga masuk antrean Tinjau Anomali.
   Orangnya sudah berdiri di klinik; kehadirannya tidak boleh hilang hanya
   karena berkasnya gagal naik.
+- **Sesi yang lupa ditutup tidak terbawa ke hari berikutnya.** `absensiAktif`
+  hanya menganggap sesi berjalan bila barisnya bertanggal hari ini, atau shift
+  malam (`lintasHari`) yang jam pulangnya memang jatuh besok — batasnya jam
+  pulang shift ditambah ambang lemburnya. Baris lama **tidak ditutup otomatis**:
+  jamnya tidak diketahui siapa pun dan menebaknya berarti mengarang jam kerja
+  yang terbawa ke penggajian. Barisnya sudah masuk antrean Tinjau Anomali, dan
+  karyawannya membetulkan lewat Presensi Backdate. Konsekuensi yang disadari:
+  yang bekerja melewati tengah malam **tanpa shift lintas hari terdaftar** tidak
+  bisa clock out setelah pukul 00.00.
+- **Izin dan sakit tidak berkuota.** Keduanya tidak pernah menyentuh
+  `leave_balances` — tidak saat diajukan, disetujui, ditolak, maupun dibatalkan.
+  Yang menentukan sebuah pengajuan itu cuti atau izin adalah **formulir yang
+  dipakai** (`jenisPengajuan` di form), bukan tebakan dari `butuhLampiran`
+  seperti dahulu. Hari izin/sakit yang disetujui bersatus `ON_PERMIT`, terpisah
+  dari `ON_LEAVE`, dan punya kolom sendiri di rekap serta di Excel.
+- **Koreksi absen menghitung ulang jam kerja, keterlambatan, dan statusnya**,
+  tetapi **tidak** menghitung ulang menit lembur — lembur punya jalur
+  persetujuannya sendiri, dan koreksi jam tidak boleh diam-diam menambah upah
+  yang tidak pernah diputuskan siapa pun.
+- **Penyetuju boleh membuka berkas milik karyawan dalam lingkupnya.**
+  `/api/berkas` dahulu hanya mengizinkan Admin dan Super Admin, sehingga dua
+  peran yang justru bertugas memeriksa — Pemilik dan Kepala Unit — melihat foto
+  di Tinjau Anomali sebagai gambar rusak. Batasnya sama persis dengan layar:
+  kepala unit sebatas departemennya, pemilik sebatas cabangnya, dan tanpa
+  lingkup yang jelas aksesnya ditolak.
 - **WFH bukan pengajuan.** Ia kewenangan yang melekat pada peran Kepala Unit —
   boleh absen dari luar area, foto tetap wajib, hari itu ditandai `WFH`.
 
@@ -182,6 +216,15 @@ dibuat. Saran: tetapkan shift di awal periode berikutnya, bukan di tengah.
 - **Nilai biasa tidak bisa diimpor server dari modul `"use client"`.** Yang
   sampai hanya referensi komponen. Peta menu admin karena itu tinggal di
   berkas netral `menu-admin.tsx`, bukan di dalam komponen sidebar.
+- **Salinan rekap yang dibekukan tidak ikut bertambah kolom.** `period_locks`
+  menyimpan `BarisRekap[]` sebagai JSON, jadi salinan lama tidak punya kolom
+  yang ditambahkan belakangan. `rekapPeriodeAtauKunci` menormalkannya
+  (`izin: b.izin ?? 0`); setiap kolom baru wajib ikut dinormalkan di sana.
+- **Layar absen dan server harus memakai rumus geofence yang sama.** Layar
+  dahulu memotong akurasi GPS seutuhnya sementara server membatasinya pada
+  toleransi lokasi, sehingga ponsel bersinyal buruk menampilkan "berada di
+  area" lalu absennya tetap diminta beralasan. Keduanya kini lewat
+  `marginAkurasi()` di `gunakan-lokasi.ts`.
 - **Periode rekap belum tentu bulan kalender.** Ambil rentangnya lewat
   `rentangPeriode()`, jangan memanggil `batasBulan()` sendiri — layar, halaman
   rincian, dan berkas unduhan harus memotong periode di tanggal yang sama.
@@ -205,7 +248,8 @@ dua kolom) · panel admin bentuk mobile · pengaturan hak akses menu per peran �
 layar absen bergaya peta penuh di menu Presensi · rekap kehadiran berbentuk
 kartu per hari · pemilih warna aplikasi · ikon menu datar · periode rekap
 mengikuti siklus gaji · kunci periode · antrean tinjau anomali · ekspor rekap
-berikut rincian fee.
+berikut rincian fee · sesi absen yang tereset tiap ganti hari · izin dan sakit
+tanpa kuota · kolom Izin terpisah di rekap.
 
 Tampilan karyawan punya dua bentuk dari satu berkas halaman. Di bawah lebar
 `lg` (1024px): satu kolom selebar 430px dengan bilah bawah, seperti sebelumnya.
@@ -236,10 +280,13 @@ baru, ikuti pola yang sama — jangan membuat berkas terpisah untuk desktop.
   belum ada penjadwal yang menghapus foto lama. `buatThumbnail()` di
   `src/lib/foto.ts` sudah ditulis tetapi tidak pernah dipanggil; dengan foto
   720×960 (~80 KB) dan 12 karyawan, penyimpanan tumbuh ±50 MB per bulan.
-- **Penyetuju berperan Kepala Unit belum bisa membuka lampiran pengajuan.**
-  `/api/berkas` membatasi ke `bolehKelolaSemua` (Admin dan Super Admin saja),
-  jadi surat dokter pada pengajuan cuti tidak bisa dibuka penyetuju. Belum
-  menggigit karena jenis cuti masih kosong.
+- **Peta absen hanya menampilkan cabang utama.** Server sudah memilih cabang
+  terdekat yang melingkupi, tetapi layarnya cuma tahu satu cabang — jadi
+  karyawan yang bertugas di cabang lain melihat "di luar area" dan diminta
+  alasan padahal absennya diterima. Sengaja belum dikerjakan: yang terkena
+  hanya drg. Mira (tidak absen) dan Tyah (kepala unit, sudah dikecualikan lewat
+  WFH), sementara memperbaikinya berarti merombak peta jadi banyak cabang di
+  layar yang paling sering dipakai.
 - **`docs/PRD.md` masih memuat nama Alia** di banyak tempat; dokumen lain sudah
   dibersihkan.
 - **Proyek `presensikaryawan-lama` di Vercel** belum dihapus.
