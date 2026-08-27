@@ -9,7 +9,7 @@ import { Crosshair, Loader2, MapPin, ScanFace } from "lucide-react";
 import { useJamDetik } from "@/lib/gunakan-jam";
 import { cn } from "@/lib/utils";
 import { aksiAlamatSekarang } from "./aksi-alamat";
-import { jarakMeter, useLokasi } from "./gunakan-lokasi";
+import { jarakMeter, marginAkurasi, useLokasi } from "./gunakan-lokasi";
 import { PanelAbsen, type Tindakan } from "./panel-absen";
 
 const PetaLeaflet = dynamic(() => import("./peta-leaflet").then((m) => m.PetaLeaflet), {
@@ -34,6 +34,7 @@ type Props = {
     lat: number;
     lng: number;
     radiusM: number;
+    toleransiAkurasiM: number;
   } | null;
   isiFormTindakan: boolean;
   daftarTindakan: Tindakan[];
@@ -71,7 +72,10 @@ export function LayarAbsen({
 
   const jarak = posisi && lokasi ? jarakMeter(posisi, lokasi) : null;
   const diLuarArea =
-    jarak !== null && lokasi ? jarak - (posisi?.akurasi ?? 0) > lokasi.radiusM : false;
+    jarak !== null && lokasi
+      ? jarak - marginAkurasi(posisi?.akurasi ?? 0, lokasi.toleransiAkurasiM) >
+        lokasi.radiusM
+      : false;
 
   const mode = sudahMasuk ? "pulang" : "masuk";
   const selesai = sudahMasuk && sudahPulang;

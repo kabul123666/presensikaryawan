@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Label, Select, Textarea } from "@/components/ui/field";
 import { formatRupiah } from "@/lib/utils";
 import { aksiClockIn, aksiClockOut, type HasilAbsen } from "./actions";
-import { jarakMeter, useLokasi } from "./gunakan-lokasi";
+import { jarakMeter, marginAkurasi, useLokasi } from "./gunakan-lokasi";
 import { PetaArea } from "./peta-area";
 
 export type Tindakan = { id: string; nama: string; kategori: string; fee: number };
@@ -27,7 +27,13 @@ type Tahap = "izin" | "kamera" | "form" | "kirim" | "selesai";
 
 type Props = {
   mode: Mode;
-  lokasi: { nama: string; lat: number; lng: number; radiusM: number } | null;
+  lokasi: {
+    nama: string;
+    lat: number;
+    lng: number;
+    radiusM: number;
+    toleransiAkurasiM: number;
+  } | null;
   isiFormTindakan: boolean;
   daftarTindakan: Tindakan[];
   onTutup: () => void;
@@ -66,7 +72,10 @@ export function PanelAbsen({
 
   const jarak = posisi && lokasi ? jarakMeter(posisi, lokasi) : null;
   const diLuarArea =
-    jarak !== null && lokasi ? jarak - (posisi?.akurasi ?? 0) > lokasi.radiusM : false;
+    jarak !== null && lokasi
+      ? jarak - marginAkurasi(posisi?.akurasi ?? 0, lokasi.toleransiAkurasiM) >
+        lokasi.radiusM
+      : false;
 
   /* ------------------------------------------------------------- Kamera */
   const hidupkanKamera = useCallback(async () => {

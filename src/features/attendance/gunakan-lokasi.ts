@@ -92,3 +92,15 @@ export function jarakMeter(a: Posisi, b: { lat: number; lng: number }) {
     Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
   return Math.round(2 * 6_371_000 * Math.asin(Math.sqrt(h)));
 }
+
+/**
+ * Margin akurasi GPS yang boleh dipotongkan dari jarak.
+ *
+ * Rumusnya harus sama persis dengan `evaluasiGeofence` di server. Dahulu layar
+ * memotong akurasi seutuhnya sementara server membatasinya pada toleransi yang
+ * ditetapkan admin, sehingga ponsel bersinyal buruk menampilkan "berada di
+ * area" lalu absennya tetap diminta beralasan begitu dikirim.
+ */
+export function marginAkurasi(akurasiM: number, toleransiM: number): number {
+  return Math.min(Math.max(akurasiM, 0), toleransiM);
+}

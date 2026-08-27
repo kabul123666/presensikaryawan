@@ -102,6 +102,7 @@ export default async function HalamanPresensi({
                   lat: lokasi.lat,
                   lng: lokasi.lng,
                   radiusM: lokasi.radiusM,
+                  toleransiAkurasiM: lokasi.gpsAccuracyToleranceM,
                 }
               : null
           }
