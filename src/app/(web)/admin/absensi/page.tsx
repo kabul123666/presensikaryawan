@@ -254,6 +254,7 @@ export default async function HalamanRekapAbsensi({
                   <th className="px-2 py-2.5 text-right">Total telat</th>
                   <th className="px-2 py-2.5 text-right">Lembur</th>
                   <th className="px-2 py-2.5 text-center">Cuti</th>
+                  <th className="px-2 py-2.5 text-center">Izin</th>
                   <th className="px-2 py-2.5 text-center">Alpa</th>
                   <th className="px-2 py-2.5 text-right">Jam kerja</th>
                   <th className="px-5 py-2.5 text-right">Fee</th>
@@ -298,6 +299,7 @@ export default async function HalamanRekapAbsensi({
                       {b.menitLembur > 0 ? formatDurasi(b.menitLembur) : "—"}
                     </td>
                     <td className="text-muted tnum px-2 py-3 text-center">{b.cuti}</td>
+                    <td className="text-muted tnum px-2 py-3 text-center">{b.izin}</td>
                     <td
                       className={cn(
                         "tnum px-2 py-3 text-center font-semibold",
@@ -328,6 +330,7 @@ export default async function HalamanRekapAbsensi({
                     {formatDurasi(total.menitLembur)}
                   </td>
                   <td className="tnum px-2 py-3 text-center">{total.cuti}</td>
+                  <td className="tnum px-2 py-3 text-center">{total.izin}</td>
                   <td className="tnum px-2 py-3 text-center">{total.alpa}</td>
                   <td className="tnum px-2 py-3 text-right">
                     {formatDurasi(total.menitKerja)}

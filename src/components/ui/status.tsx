@@ -40,6 +40,11 @@ const STATUS_ABSEN: Record<
     kelas: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-200",
     titik: "bg-status-leave",
   },
+  ON_PERMIT: {
+    label: "Izin / Sakit",
+    kelas: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200",
+    titik: "bg-status-leave",
+  },
   HOLIDAY: {
     label: "Libur Nasional",
     kelas: "bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-200",

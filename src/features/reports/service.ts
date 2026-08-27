@@ -68,6 +68,8 @@ export type BarisRekap = {
   lembur: number;
   menitLembur: number;
   cuti: number;
+  /** Izin dan sakit yang disetujui — tidak memotong cuti tahunan. */
+  izin: number;
   alpa: number;
   belumLengkap: number;
   menitKerja: number;
@@ -126,6 +128,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
       lembur: sql<number>`count(*) filter (where ${attendances.menitLembur} > 0)`,
       menitLembur: sql<number>`coalesce(sum(${attendances.menitLembur}), 0)`,
       cuti: sql<number>`count(*) filter (where ${attendances.status} = 'ON_LEAVE')`,
+      izin: sql<number>`count(*) filter (where ${attendances.status} = 'ON_PERMIT')`,
       alpa: sql<number>`count(*) filter (where ${attendances.status} = 'ABSENT')`,
       belumLengkap: sql<number>`count(*) filter (where ${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null)`,
       menitKerja: sql<number>`coalesce(sum(${attendances.durasiKerjaMenit}), 0)`,
@@ -179,6 +182,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
     lembur: Number(b.lembur),
     menitLembur: Number(b.menitLembur),
     cuti: Number(b.cuti),
+    izin: Number(b.izin),
     alpa: Number(b.alpa) + (petaAlpa[b.employeeId] ?? 0),
     belumLengkap: Number(b.belumLengkap),
     menitKerja: Number(b.menitKerja),
@@ -218,6 +222,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
         lembur: 0,
         menitLembur: 0,
         cuti: 0,
+        izin: 0,
         alpa: petaAlpa[t.employeeId] ?? 0,
         belumLengkap: 0,
         menitKerja: 0,
@@ -304,6 +309,7 @@ export function totalRekap(baris: BarisRekap[]) {
       menitTerlambat: t.menitTerlambat + b.menitTerlambat,
       menitLembur: t.menitLembur + b.menitLembur,
       cuti: t.cuti + b.cuti,
+      izin: t.izin + b.izin,
       alpa: t.alpa + b.alpa,
       menitKerja: t.menitKerja + b.menitKerja,
       totalFee: t.totalFee + b.totalFee,
@@ -314,6 +320,7 @@ export function totalRekap(baris: BarisRekap[]) {
       menitTerlambat: 0,
       menitLembur: 0,
       cuti: 0,
+      izin: 0,
       alpa: 0,
       menitKerja: 0,
       totalFee: 0,

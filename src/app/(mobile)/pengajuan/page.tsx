@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 
 import { IconApproval, IconCuti, IconLembur, IconRiwayat } from "@/components/ikon";
 import { FileText } from "lucide-react";
@@ -26,17 +26,41 @@ export default async function HalamanPengajuan() {
       .where(eq(requests.employeeId, pengguna.employeeId))
       .orderBy(desc(requests.createdAt))
       .limit(30),
+    /*
+     * Saldo dibaca dari jenis cutinya, bukan dari baris saldo.
+     *
+     * Baris saldo baru terbentuk untuk karyawan yang didaftarkan setelah
+     * jenis cutinya dibuat; yang lebih dulu masuk tidak punya baris sama
+     * sekali dan kartunya menampilkan nol hari padahal kuotanya utuh. Jenis
+     * berlampiran tidak ikut — itu wilayah izin/sakit, yang memang tidak
+     * berkuota.
+     */
     db
       .select({
         nama: leaveTypes.nama,
+        kuotaDefault: leaveTypes.kuotaDefault,
         kuota: leaveBalances.kuota,
         carryOver: leaveBalances.carryOverMasuk,
         terpakai: leaveBalances.terpakai,
         pending: leaveBalances.pending,
       })
-      .from(leaveBalances)
-      .innerJoin(leaveTypes, eq(leaveTypes.id, leaveBalances.leaveTypeId))
-      .where(eq(leaveBalances.employeeId, pengguna.employeeId)),
+      .from(leaveTypes)
+      .leftJoin(
+        leaveBalances,
+        and(
+          eq(leaveBalances.leaveTypeId, leaveTypes.id),
+          eq(leaveBalances.employeeId, pengguna.employeeId),
+          eq(leaveBalances.tahun, tahun),
+        ),
+      )
+      .where(
+        and(
+          eq(leaveTypes.aktif, true),
+          eq(leaveTypes.butuhLampiran, false),
+          gt(leaveTypes.kuotaDefault, 0),
+        ),
+      )
+      .orderBy(asc(leaveTypes.nama)),
 
     // Catatan penyetuju tinggal di tabel tersendiri. Tanpa ini karyawan hanya
     // melihat pengajuannya ditolak tanpa pernah tahu alasannya.
@@ -57,7 +81,16 @@ export default async function HalamanPengajuan() {
       .map((k) => [k.requestId, k.catatan] as const),
   );
 
-  const cutiTahunan = saldo.find((s) => s.nama === "Cuti Tahunan");
+  const jenisUtama = saldo[0] ?? null;
+  const cutiTahunan = jenisUtama
+    ? {
+        nama: jenisUtama.nama,
+        kuota: jenisUtama.kuota ?? jenisUtama.kuotaDefault,
+        carryOver: jenisUtama.carryOver ?? 0,
+        terpakai: jenisUtama.terpakai ?? 0,
+        pending: jenisUtama.pending ?? 0,
+      }
+    : null;
   const sisaCuti = cutiTahunan
     ? cutiTahunan.kuota +
       cutiTahunan.carryOver -
@@ -84,7 +117,7 @@ export default async function HalamanPengajuan() {
           <div className="mt-4 px-5 lg:mt-0 lg:px-0">
             <div className="bg-surface rounded-[var(--radius-sheet)] p-5 shadow-[var(--shadow-raised)]">
               <p className="text-subtle text-xs font-semibold">
-                Sisa cuti tahunan {tahun}
+                Sisa {cutiTahunan?.nama ?? "cuti"} {tahun}
               </p>
               <p className="tnum text-body mt-1 text-[32px] leading-none font-bold">
                 {sisaCuti} <span className="text-muted text-base font-bold">hari</span>

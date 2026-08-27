@@ -58,6 +58,8 @@ export const attendanceStatusEnum = pgEnum("attendance_status", [
   "OVERTIME",
   "ABSENT",
   "ON_LEAVE",
+  /** Izin atau sakit yang disetujui — tidak memotong cuti tahunan. */
+  "ON_PERMIT",
   "HOLIDAY",
   "DAY_OFF",
   "INCOMPLETE",

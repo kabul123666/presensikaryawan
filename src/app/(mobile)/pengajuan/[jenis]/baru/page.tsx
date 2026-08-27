@@ -56,7 +56,6 @@ export default async function HalamanFormPengajuan({
     )
     .where(eq(leaveTypes.aktif, true));
 
-  // Tab "cuti" menampilkan cuti biasa, tab "izin" yang butuh lampiran.
   const semua: JenisCutiOpsi[] = baris.map((b) => ({
     id: b.id,
     nama: b.nama,
@@ -71,10 +70,19 @@ export default async function HalamanFormPengajuan({
     ),
   }));
 
-  const jenisCuti =
-    jenis === "izin"
-      ? semua.filter((s) => s.butuhLampiran || s.kuotaDefault === 0)
-      : semua.filter((s) => !s.butuhLampiran && s.kuotaDefault > 0);
+  /*
+   * Kedua tab membagi habis daftar jenisnya, tidak saling tumpang tindih.
+   *
+   * Yang mensyaratkan lampiran atau tidak berkuota masuk ke Izin/Sakit —
+   * keduanya tidak memotong cuti tahunan. Sisanya masuk ke Cuti. Dahulu
+   * saringannya dua-duanya menyaring maju, sehingga jenis berkuota yang
+   * mensyaratkan lampiran tidak muncul di mana pun, dan bila tab Izin
+   * kebetulan kosong daftarnya jatuh kembali ke seluruh jenis — termasuk
+   * cuti tahunan, yang lalu ikut terpotong hanya karena karyawan mengajukan
+   * izin sakit dari tab yang salah.
+   */
+  const keIzin = (s: JenisCutiOpsi) => s.butuhLampiran || s.kuotaDefault === 0;
+  const jenisCuti = semua.filter((s) => (jenis === "izin" ? keIzin(s) : !keIzin(s)));
 
   const kebijakan = await bacaPengaturan("kebijakan_absensi");
 
@@ -98,7 +106,7 @@ export default async function HalamanFormPengajuan({
       <div className="pt-5">
         <FormPengajuan
           jenis={jenis as Jenis}
-          jenisCuti={jenisCuti.length > 0 ? jenisCuti : semua}
+          jenisCuti={jenisCuti}
           batasBackdateHari={kebijakan.batasBackdateHari}
         />
       </div>

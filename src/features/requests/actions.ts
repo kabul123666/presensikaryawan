@@ -11,10 +11,11 @@ import { attendances, auditLogs, leaveBalances, leaveTypes, requests } from "@/d
 import { wajibMasuk, type PenggunaSesi } from "@/lib/auth/session";
 import { MAKS_UKURAN_FOTO, terlihatSepertiGambar } from "@/lib/foto";
 import { langkahPersetujuan } from "@/features/approval/service";
+import { shiftBerlaku } from "@/features/attendance/service";
 import { tanggalTerkunci } from "@/features/reports/kunci";
 import { bacaPengaturan } from "@/features/settings/service";
 import { storage } from "@/lib/storage";
-import { rentangTanggal, selisihHari, tanggalWIB } from "@/lib/waktu";
+import { jamKeMenit, rentangTanggal, selisihHari, tanggalWIB } from "@/lib/waktu";
 
 export type HasilPengajuan = { ok: boolean; pesan: string };
 
@@ -94,13 +95,23 @@ const skemaCuti = z.object({
   mulai: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal mulai tidak valid"),
   akhir: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal selesai tidak valid"),
   alasan: z.string().trim().min(5, "Alasan minimal 5 karakter").max(500),
+  /** Formulir yang dipakai — inilah yang menentukan saldo ikut terpotong. */
+  jenisPengajuan: z.enum(["cuti", "izin"]).default("cuti"),
 });
 
 /**
  * Mengajukan cuti atau izin.
  *
- * Hari yang diajukan langsung ditahan di kolom `pending` supaya karyawan
+ * Hari cuti yang diajukan langsung ditahan di kolom `pending` supaya karyawan
  * tidak bisa mengajukan dua kali melebihi saldo sambil menunggu keputusan.
+ *
+ * Izin dan sakit tidak begitu: keduanya tidak memotong cuti tahunan dan tidak
+ * menuntut kuota sama sekali. Orang yang demam tidak seharusnya kehilangan
+ * hak cutinya, dan menahan izin sampai kuotanya cukup hanya membuat orang
+ * berangkat kerja dalam keadaan sakit. Yang membedakannya adalah formulir yang
+ * dipakai, bukan tebakan dari sifat jenis cutinya — dahulu jenis yang
+ * mensyaratkan lampiran otomatis dianggap izin, sehingga cuti tahunan yang
+ * mensyaratkan formulir ikut tercatat sebagai izin.
  */
 export async function aksiAjukanCuti(
   _prev: HasilPengajuan | null,
@@ -111,6 +122,9 @@ export async function aksiAjukanCuti(
   if (!parsed.success) return { ok: false, pesan: parsed.error.issues[0].message };
 
   const d = parsed.data;
+  const izin = d.jenisPengajuan === "izin";
+  const tipe = izin ? "PERMIT" : "LEAVE";
+
   if (selisihHari(d.mulai, d.akhir) < 0) {
     return { ok: false, pesan: "Tanggal selesai tidak boleh sebelum tanggal mulai." };
   }
@@ -141,10 +155,11 @@ export async function aksiAjukanCuti(
   }
 
   const tahun = Number(d.mulai.slice(0, 4));
+  const potongKuota = !izin && jenis.kuotaDefault > 0;
 
   // Saldo diperiksa di server memakai angka dari database, bukan angka yang
   // ditampilkan di layar karyawan.
-  if (jenis.kuotaDefault > 0) {
+  if (potongKuota) {
     const [saldo] = await db
       .select()
       .from(leaveBalances)
@@ -157,9 +172,19 @@ export async function aksiAjukanCuti(
       )
       .limit(1);
 
-    const sisa = saldo
-      ? saldo.kuota + saldo.carryOverMasuk - saldo.terpakai - saldo.pending
-      : 0;
+    /*
+     * Baris saldo baru dibuatkan untuk karyawan yang didaftarkan setelah
+     * jenis cutinya ada. Yang lebih dulu masuk tidak punya baris sama sekali,
+     * dan dahulu sisanya dianggap nol — layar menjanjikan dua belas hari,
+     * lalu pengajuannya ditolak "sisa 0 hari". Selama barisnya belum ada,
+     * kuotanya diambil dari jenis cutinya, sama seperti yang ditampilkan.
+     */
+    const kuota = saldo?.kuota ?? jenis.kuotaDefault;
+    const sisa =
+      kuota +
+      (saldo?.carryOverMasuk ?? 0) -
+      (saldo?.terpakai ?? 0) -
+      (saldo?.pending ?? 0);
 
     if (jumlahHari > sisa) {
       return {
@@ -173,9 +198,9 @@ export async function aksiAjukanCuti(
     .insert(requests)
     .values({
       employeeId: pengguna.employeeId,
-      tipe: jenis.butuhLampiran ? "PERMIT" : "LEAVE",
+      tipe,
       status: "PENDING",
-      totalStep: await langkahPersetujuan(jenis.butuhLampiran ? "PERMIT" : "LEAVE", {
+      totalStep: await langkahPersetujuan(tipe, {
         departmentId: pengguna.departmentId,
         locationId: pengguna.locationId,
       }),
@@ -191,21 +216,29 @@ export async function aksiAjukanCuti(
     })
     .returning();
 
-  // Tahan hari yang diajukan.
-  if (jenis.kuotaDefault > 0) {
+  // Tahan hari yang diajukan. Barisnya sekalian dibuat bila belum ada, supaya
+  // penahanan ini tidak menguap tanpa jejak seperti sebelumnya.
+  if (potongKuota) {
     await db
-      .update(leaveBalances)
-      .set({ pending: sql`${leaveBalances.pending} + ${jumlahHari}` })
-      .where(
-        and(
-          eq(leaveBalances.employeeId, pengguna.employeeId),
-          eq(leaveBalances.leaveTypeId, jenis.id),
-          eq(leaveBalances.tahun, tahun),
-        ),
-      );
+      .insert(leaveBalances)
+      .values({
+        employeeId: pengguna.employeeId,
+        leaveTypeId: jenis.id,
+        tahun,
+        kuota: jenis.kuotaDefault,
+        pending: jumlahHari,
+      })
+      .onConflictDoUpdate({
+        target: [
+          leaveBalances.employeeId,
+          leaveBalances.leaveTypeId,
+          leaveBalances.tahun,
+        ],
+        set: { pending: sql`${leaveBalances.pending} + ${jumlahHari}` },
+      });
   }
 
-  await catat(pengguna, "AJUKAN_CUTI", pengajuan.id, {
+  await catat(pengguna, izin ? "AJUKAN_IZIN" : "AJUKAN_CUTI", pengajuan.id, {
     jenis: jenis.nama,
     mulai: d.mulai,
     jumlahHari,
@@ -324,6 +357,14 @@ export async function aksiAjukanKoreksi(
     return { ok: false, pesan: "Tidak bisa mengoreksi tanggal yang belum terjadi." };
   }
 
+  // Jam pulang yang lebih awal dari jam masuk hanya masuk akal untuk shift
+  // malam. Tanpa penjagaan ini, jam yang tertukar tetap lolos sampai disetujui
+  // lalu tersimpan sebagai hari kerja nol menit.
+  const { shift } = await shiftBerlaku(pengguna.employeeId, d.tanggal);
+  if (!shift?.lintasHari && jamKeMenit(d.jamPulang) <= jamKeMenit(d.jamMasuk)) {
+    return { ok: false, pesan: "Jam pulang harus lebih akhir daripada jam masuk." };
+  }
+
   // Batas mundur dibaca dari pengaturan, bukan ditanam di kode.
   const kebijakan = await bacaPengaturan("kebijakan_absensi");
   if (mundur > kebijakan.batasBackdateHari) {
@@ -414,10 +455,11 @@ export async function aksiBatalkanPengajuan(id: string): Promise<HasilPengajuan>
     .set({ status: "CANCELLED", selesaiAt: new Date() })
     .where(eq(requests.id, id));
 
-  // Kembalikan hari yang tadinya ditahan.
+  // Kembalikan hari yang tadinya ditahan. Hanya cuti yang pernah menahan
+  // saldo; izin dan sakit tidak menyentuhnya sama sekali.
   const p = pengajuan.payload as Record<string, unknown>;
   if (
-    (pengajuan.tipe === "LEAVE" || pengajuan.tipe === "PERMIT") &&
+    pengajuan.tipe === "LEAVE" &&
     typeof p.leaveTypeId === "string" &&
     typeof p.mulai === "string"
   ) {

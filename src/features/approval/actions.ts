@@ -15,6 +15,12 @@ import {
   requests,
   type RequestType,
 } from "@/db/schema";
+import {
+  nilaiClockIn,
+  nilaiClockOut,
+  nilaiClockOutTanpaShift,
+  shiftBerlaku,
+} from "@/features/attendance/service";
 import { tanggalTerkunci } from "@/features/reports/kunci";
 import { tanggalTerdampak } from "@/features/requests/ringkasan";
 import { PERAN_PENYETUJU, wajibPeran, type PenggunaSesi } from "@/lib/auth/session";
@@ -64,34 +70,48 @@ async function terapkanPersetujuan(pengajuan: Pengajuan) {
 
       const tahun = Number(mulai.slice(0, 4));
 
-      // Hari yang tadinya ditahan kini benar-benar terpakai.
-      await db
-        .update(leaveBalances)
-        .set({
-          terpakai: sql`${leaveBalances.terpakai} + ${jumlahHari}`,
-          pending: sql`greatest(0, ${leaveBalances.pending} - ${jumlahHari})`,
-        })
-        .where(
-          and(
-            eq(leaveBalances.employeeId, pengajuan.employeeId),
-            eq(leaveBalances.leaveTypeId, leaveTypeId),
-            eq(leaveBalances.tahun, tahun),
-          ),
-        );
+      // Hanya cuti yang memotong saldo. Izin dan sakit tidak pernah menahan
+      // hari apa pun saat diajukan, jadi tidak ada yang perlu dipindahkan ke
+      // kolom terpakai — cuti tahunannya tetap utuh.
+      if (pengajuan.tipe === "LEAVE") {
+        await db
+          .update(leaveBalances)
+          .set({
+            terpakai: sql`${leaveBalances.terpakai} + ${jumlahHari}`,
+            pending: sql`greatest(0, ${leaveBalances.pending} - ${jumlahHari})`,
+          })
+          .where(
+            and(
+              eq(leaveBalances.employeeId, pengajuan.employeeId),
+              eq(leaveBalances.leaveTypeId, leaveTypeId),
+              eq(leaveBalances.tahun, tahun),
+            ),
+          );
+      }
 
-      // Tandai hari-hari tersebut sebagai cuti agar tidak terhitung alpa.
+      /*
+       * Tandai hari-hari tersebut agar tidak terhitung alpa.
+       *
+       * Cuti dan izin dibedakan statusnya. Keduanya sama-sama ketidakhadiran
+       * yang sah, tetapi hanya cuti yang memotong hak tahunan — menghitungnya
+       * di satu kolom membuat rekap terbaca seolah orang yang tiga hari sakit
+       * sudah memakai tiga hari cutinya.
+       */
+      const statusHari = pengajuan.tipe === "PERMIT" ? "ON_PERMIT" : "ON_LEAVE";
+      const label = pengajuan.tipe === "PERMIT" ? "Izin/sakit" : "Cuti";
+
       for (const tanggal of rentangTanggal(mulai, akhir)) {
         await db
           .insert(attendances)
           .values({
             employeeId: pengajuan.employeeId,
             tanggal,
-            status: "ON_LEAVE",
-            catatanKerja: `Cuti/izin disetujui (${pengajuan.id.slice(0, 8)})`,
+            status: statusHari,
+            catatanKerja: `${label} disetujui (${pengajuan.id.slice(0, 8)})`,
           })
           .onConflictDoUpdate({
             target: [attendances.employeeId, attendances.tanggal],
-            set: { status: "ON_LEAVE", updatedAt: new Date() },
+            set: { status: statusHari, updatedAt: new Date() },
           });
       }
       break;
@@ -104,24 +124,73 @@ async function terapkanPersetujuan(pengajuan: Pengajuan) {
       const jamPulang = typeof p.jamPulang === "string" ? p.jamPulang : null;
       if (!tanggal) break;
 
+      /*
+       * Jam yang dikoreksi wajib dinilai ulang.
+       *
+       * Sebelumnya hanya kolom jamnya yang ditimpa, sedangkan durasi kerja,
+       * keterlambatan, dan statusnya dibiarkan memakai angka lama. Koreksi
+       * yang disetujui karena karyawan lupa clock out karena itu tersimpan
+       * dengan jam masuk dan jam pulang lengkap tetapi jam kerja nol — dan
+       * nol itulah yang terbawa ke rekap penggajian.
+       *
+       * Menit lembur sengaja tidak ikut dihitung ulang: lembur punya jalur
+       * persetujuannya sendiri, dan koreksi jam tidak boleh diam-diam
+       * menambah upah lembur yang tidak pernah diputuskan siapa pun.
+       */
+      const [lama] = attendanceId
+        ? await db
+            .select()
+            .from(attendances)
+            .where(eq(attendances.id, attendanceId))
+            .limit(1)
+        : await db
+            .select()
+            .from(attendances)
+            .where(
+              and(
+                eq(attendances.employeeId, pengajuan.employeeId),
+                eq(attendances.tanggal, tanggal),
+              ),
+            )
+            .limit(1);
+
+      const masuk = jamMasuk ? waktuWIB(tanggal, jamMasuk) : (lama?.clockInAt ?? null);
+      let pulang = jamPulang ? waktuWIB(tanggal, jamPulang) : (lama?.clockOutAt ?? null);
+
+      const { shift } = await shiftBerlaku(pengajuan.employeeId, tanggal);
+
+      // Shift malam: jam pulang yang lebih awal dari jam masuk jatuh di
+      // tanggal berikutnya, bukan mundur ke pagi hari yang sama.
+      if (masuk && pulang && pulang <= masuk && shift?.lintasHari) {
+        pulang = new Date(pulang.getTime() + 86_400_000);
+      }
+
+      const hasilMasuk = masuk && shift ? nilaiClockIn(shift, masuk) : null;
+      const statusMasuk = hasilMasuk?.status ?? "ON_TIME";
+      const hasilPulang =
+        masuk && pulang
+          ? shift
+            ? nilaiClockOut(shift, masuk, pulang, statusMasuk)
+            : nilaiClockOutTanpaShift(masuk, pulang)
+          : null;
+
       const nilai = {
-        ...(jamMasuk ? { clockInAt: waktuWIB(tanggal, jamMasuk) } : {}),
-        ...(jamPulang ? { clockOutAt: waktuWIB(tanggal, jamPulang) } : {}),
+        ...(masuk ? { clockInAt: masuk } : {}),
+        ...(pulang ? { clockOutAt: pulang } : {}),
+        shiftId: shift?.id ?? lama?.shiftId ?? null,
+        status: hasilPulang?.pulangCepat ? ("EARLY_LEAVE" as const) : statusMasuk,
+        menitTerlambat: hasilMasuk?.menitTerlambat ?? 0,
+        durasiKerjaMenit: hasilPulang?.durasiKerjaMenit ?? 0,
         hasilKoreksi: true,
         updatedAt: new Date(),
       };
 
-      if (attendanceId) {
-        await db.update(attendances).set(nilai).where(eq(attendances.id, attendanceId));
+      if (lama) {
+        await db.update(attendances).set(nilai).where(eq(attendances.id, lama.id));
       } else {
         await db
           .insert(attendances)
-          .values({
-            employeeId: pengajuan.employeeId,
-            tanggal,
-            status: "ON_TIME",
-            ...nilai,
-          })
+          .values({ employeeId: pengajuan.employeeId, tanggal, ...nilai })
           .onConflictDoUpdate({
             target: [attendances.employeeId, attendances.tanggal],
             set: nilai,
@@ -170,6 +239,8 @@ async function terapkanPenolakan(pengajuan: Pengajuan) {
       const mulai = typeof p.mulai === "string" ? p.mulai : null;
       const jumlahHari = Number(p.jumlahHari ?? 0);
       if (!leaveTypeId || !mulai) break;
+      // Izin dan sakit tidak pernah menahan saldo, jadi tidak ada yang kembali.
+      if (pengajuan.tipe !== "LEAVE") break;
 
       // Hari yang ditahan dikembalikan ke saldo.
       await db

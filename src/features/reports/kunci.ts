@@ -124,11 +124,15 @@ export async function rekapPeriodeAtauKunci(filter: FilterRekap) {
   const beku = await rekapTerkunci(filter.mulai, filter.akhir);
   if (!beku) return { baris: await rekapPeriode(filter), terkunci: false };
 
-  const baris = beku.filter(
-    (b) =>
-      (!filter.departmentId || b.departmentId === filter.departmentId) &&
-      (!filter.employeeId || b.employeeId === filter.employeeId),
-  );
+  // Salinan yang dibekukan sebelum kolom izin ada tidak memuatnya sama sekali;
+  // dibaca sebagai nol supaya rekap lama tetap terbuka tanpa angka kosong.
+  const baris = beku
+    .filter(
+      (b) =>
+        (!filter.departmentId || b.departmentId === filter.departmentId) &&
+        (!filter.employeeId || b.employeeId === filter.employeeId),
+    )
+    .map((b) => ({ ...b, izin: b.izin ?? 0 }));
 
   return { baris, terkunci: true };
 }

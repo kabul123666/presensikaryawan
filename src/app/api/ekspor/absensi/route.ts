@@ -70,14 +70,14 @@ export async function GET(request: Request) {
   });
 
   // --- Kop laporan
-  ws.mergeCells("A1:N1");
+  ws.mergeCells("A1:P1");
   ws.getCell("A1").value = profil.nama
     ? `REKAP ABSENSI KARYAWAN — ${profil.nama.toUpperCase()}`
     : "REKAP ABSENSI KARYAWAN";
   ws.getCell("A1").font = { bold: true, size: 14 };
   ws.getCell("A1").alignment = { horizontal: "center" };
 
-  ws.mergeCells("A2:N2");
+  ws.mergeCells("A2:P2");
   ws.getCell("A2").value =
     `Periode ${namaBulan(tahun, bulan)} · ${tanggalPendek(rentang.mulai)} – ${tanggalPendek(rentang.akhir)}` +
     (kunci ? " · TERKUNCI" : "");
@@ -96,6 +96,7 @@ export async function GET(request: Request) {
     "Lembur",
     "Total Lembur (menit)",
     "Cuti",
+    "Izin",
     "Alpa",
     "Jam Kerja (jam)",
     "Fee Tindakan",
@@ -128,6 +129,7 @@ export async function GET(request: Request) {
       b.lembur,
       b.menitLembur,
       b.cuti,
+      b.izin,
       b.alpa,
       Number((b.menitKerja / 60).toFixed(2)),
       b.totalFee,
@@ -148,6 +150,7 @@ export async function GET(request: Request) {
     "",
     total.menitLembur,
     total.cuti,
+    total.izin,
     total.alpa,
     Number((total.menitKerja / 60).toFixed(2)),
     total.totalFee,
@@ -159,10 +162,10 @@ export async function GET(request: Request) {
 
   // Kolom fee ditulis sebagai angka dengan format rupiah agar bisa dijumlah
   // ulang di Excel tanpa perlu membersihkan teks.
-  ws.getColumn(14).numFmt = "0.00";
-  ws.getColumn(15).numFmt = '"Rp"#,##0';
+  ws.getColumn(15).numFmt = "0.00";
+  ws.getColumn(16).numFmt = '"Rp"#,##0';
 
-  const lebar = [5, 12, 26, 20, 18, 8, 12, 10, 12, 9, 13, 7, 7, 12, 16];
+  const lebar = [5, 12, 26, 20, 18, 8, 12, 10, 12, 9, 13, 7, 7, 7, 12, 16];
   lebar.forEach((w, i) => {
     ws.getColumn(i + 1).width = w;
   });

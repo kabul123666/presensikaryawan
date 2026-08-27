@@ -62,7 +62,9 @@ export async function ringkasanHariIni(
     .select({
       hadir: sql<number>`count(*) filter (where ${attendances.clockInAt} is not null)`,
       terlambat: sql<number>`count(*) filter (where ${attendances.menitTerlambat} > 0)`,
-      cuti: sql<number>`count(*) filter (where ${attendances.status} = 'ON_LEAVE')`,
+      // Cuti sekaligus izin/sakit: keduanya ketidakhadiran yang sah, dan
+      // hitungan "belum absen" di bawah harus mengurangi dua-duanya.
+      cuti: sql<number>`count(*) filter (where ${attendances.status} in ('ON_LEAVE', 'ON_PERMIT'))`,
       belumPulang: sql<number>`count(*) filter (where ${attendances.clockInAt} is not null and ${attendances.clockOutAt} is null)`,
       ditandai: sql<number>`count(*) filter (where jsonb_array_length(${attendances.flags}) > 0)`,
     })

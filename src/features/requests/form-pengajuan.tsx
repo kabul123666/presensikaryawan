@@ -44,7 +44,7 @@ const JUDUL: Record<Jenis, { judul: string; isi: string }> = {
   },
   izin: {
     judul: "Ajukan Izin / Sakit",
-    isi: "Lampirkan surat dokter untuk sakit lebih dari satu hari.",
+    isi: "Izin dan sakit tidak memotong cuti tahunan. Lampirkan surat dokter untuk sakit lebih dari satu hari.",
   },
   lembur: {
     judul: "Ajukan Lembur",
@@ -101,7 +101,15 @@ export function FormPengajuan({
 
   const jumlahHari = Math.max(0, selisihHari(mulai, akhir) + 1);
   const cutiAktif = jenisCuti.find((j) => j.id === jenisTerpilih);
-  const kurang = cutiAktif && cutiAktif.kuotaDefault > 0 && jumlahHari > cutiAktif.sisa;
+
+  /*
+   * Hanya cuti yang bertumpu pada saldo. Izin dan sakit tidak pernah memotong
+   * cuti tahunan, jadi kuotanya tidak ikut ditampilkan maupun diperiksa di
+   * sini — pemeriksaan sesungguhnya tetap di server.
+   */
+  const pakaiKuota = jenis === "cuti";
+  const kurang =
+    pakaiKuota && cutiAktif && cutiAktif.kuotaDefault > 0 && jumlahHari > cutiAktif.sisa;
 
   if (hasil?.ok) return <Sukses pesan={hasil.pesan} />;
 
@@ -137,6 +145,9 @@ export function FormPengajuan({
   return (
     <div className="px-5 pb-8">
       <form action={kirim} className="space-y-4">
+        {/* Cuti dan izin memakai aksi yang sama; yang membedakan keduanya —
+            termasuk apakah saldo cuti ikut terpotong — adalah formulir ini. */}
+        {butuhJenis && <input type="hidden" name="jenisPengajuan" value={jenis} />}
         <p className="text-muted text-[13px] leading-relaxed">{info.isi}</p>
 
         {hasil && !hasil.ok && (
@@ -166,7 +177,7 @@ export function FormPengajuan({
                 {jenisCuti.map((j) => (
                   <option key={j.id} value={j.id}>
                     {j.nama}
-                    {j.kuotaDefault > 0 ? ` — sisa ${j.sisa} hari` : ""}
+                    {pakaiKuota && j.kuotaDefault > 0 ? ` — sisa ${j.sisa} hari` : ""}
                   </option>
                 ))}
               </Select>
@@ -216,7 +227,7 @@ export function FormPengajuan({
               )}
             >
               {jumlahHari} hari diajukan
-              {cutiAktif && cutiAktif.kuotaDefault > 0 && (
+              {pakaiKuota && cutiAktif && cutiAktif.kuotaDefault > 0 && (
                 <span className="font-normal">
                   {" · "}sisa saldo {cutiAktif.sisa} hari
                   {kurang ? " — tidak mencukupi" : ""}
