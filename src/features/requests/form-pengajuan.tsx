@@ -1,8 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Loader2, Paperclip } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  Images,
+  Loader2,
+  Paperclip,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Hint, Input, Label, Select, Textarea } from "@/components/ui/field";
@@ -14,6 +22,7 @@ import {
   aksiAjukanLembur,
   type HasilPengajuan,
 } from "./actions";
+import { kecilkanFoto } from "./kecilkan-foto";
 
 export type JenisCutiOpsi = {
   id: string;
@@ -93,6 +102,68 @@ export function FormPengajuan({
     aksi,
     null,
   );
+
+  const inputLampiran = useRef<HTMLInputElement>(null);
+  const [menyiapkanLampiran, setMenyiapkanLampiran] = useState(false);
+  const [infoLampiran, setInfoLampiran] = useState<string | null>(null);
+  const [pratinjauLampiran, setPratinjauLampiran] = useState<string | null>(null);
+
+  /**
+   * Dua jalan mengambil surat dokter, dari satu kolom berkas yang sama.
+   *
+   * Atribut `capture` yang menentukan peramban membuka kamera atau galeri, dan
+   * ia dipasang tepat sebelum kolomnya diklik — bukan lewat dua kolom terpisah,
+   * karena dua kolom bernama sama membuat yang kosong menimpa yang berisi saat
+   * formulirnya dikirim.
+   */
+  function bukaSumberLampiran(sumber: "galeri" | "kamera") {
+    const kolom = inputLampiran.current;
+    if (!kolom) return;
+
+    if (sumber === "kamera") kolom.setAttribute("capture", "environment");
+    else kolom.removeAttribute("capture");
+    kolom.click();
+  }
+
+  function hapusLampiran() {
+    if (inputLampiran.current) inputLampiran.current.value = "";
+    if (pratinjauLampiran) URL.revokeObjectURL(pratinjauLampiran);
+    setPratinjauLampiran(null);
+    setInfoLampiran(null);
+  }
+
+  /**
+   * Foto diperkecil di peramban begitu dipilih, bukan saat dikirim.
+   *
+   * Selesai di sini, yang berangkat ke server tinggal ratusan kilobyte — dan
+   * pengguna melihat ukurannya lebih dulu, bukan menunggu unggahan panjang
+   * yang baru ketahuan gagalnya di ujung.
+   */
+  async function siapkanLampiran(berkas: File | undefined) {
+    if (!berkas) {
+      setInfoLampiran(null);
+      return;
+    }
+
+    setMenyiapkanLampiran(true);
+    try {
+      const kecil = await kecilkanFoto(berkas);
+      if (kecil !== berkas && inputLampiran.current) {
+        const wadah = new DataTransfer();
+        wadah.items.add(kecil);
+        inputLampiran.current.files = wadah.files;
+      }
+      if (pratinjauLampiran) URL.revokeObjectURL(pratinjauLampiran);
+      setPratinjauLampiran(URL.createObjectURL(kecil));
+      setInfoLampiran(`Siap dikirim · ${Math.round(kecil.size / 1024)} KB`);
+    } catch {
+      setInfoLampiran(
+        "Foto dikirim apa adanya — peramban ini tidak bisa memperkecilnya.",
+      );
+    } finally {
+      setMenyiapkanLampiran(false);
+    }
+  }
 
   const hariIni = tanggalWIB();
   const [mulai, setMulai] = useState(hariIni);
@@ -242,15 +313,70 @@ export function FormPengajuan({
                     <Paperclip size={14} /> Lampiran surat dokter
                   </span>
                 </Label>
+                {/* Kolom berkasnya disembunyikan dari mata, bukan dari
+                    formulir — yang ditekan pengguna adalah dua tombol di bawah,
+                    dan kolom inilah yang tetap membawa berkasnya saat dikirim. */}
                 <input
+                  ref={inputLampiran}
                   id="lampiran"
                   name="lampiran"
                   type="file"
                   accept="image/*"
-                  capture="environment"
-                  className="border-app-strong text-muted file:bg-brand-50 file:text-brand-800 dark:file:bg-brand-900/50 dark:file:text-brand-100 w-full rounded-[var(--radius-input)] border p-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-1.5 file:text-sm file:font-semibold"
+                  onChange={(e) => siapkanLampiran(e.target.files?.[0])}
+                  className="sr-only"
                 />
-                <Hint>Wajib bila mengajukan lebih dari satu hari.</Hint>
+
+                <div className="mt-1.5 grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => bukaSumberLampiran("galeri")}
+                    disabled={menyiapkanLampiran}
+                    className="border-app-strong bg-surface text-body hover:border-brand-300 hover:bg-surface-muted flex h-[52px] items-center justify-center gap-2 rounded-[var(--radius-input)] border text-sm font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <Images size={17} /> Dari Galeri
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => bukaSumberLampiran("kamera")}
+                    disabled={menyiapkanLampiran}
+                    className="border-app-strong bg-surface text-body hover:border-brand-300 hover:bg-surface-muted flex h-[52px] items-center justify-center gap-2 rounded-[var(--radius-input)] border text-sm font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <Camera size={17} /> Foto Langsung
+                  </button>
+                </div>
+
+                {pratinjauLampiran && (
+                  <div className="border-app bg-surface mt-2.5 flex items-center gap-3 rounded-[var(--radius-input)] border p-2.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pratinjauLampiran}
+                      alt="Pratinjau surat dokter"
+                      className="size-14 shrink-0 rounded-lg object-cover"
+                    />
+                    <p className="text-body min-w-0 flex-1 text-[13px] font-semibold">
+                      Surat dokter terlampir
+                      <span className="text-subtle block text-[12px] font-normal">
+                        {infoLampiran}
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={hapusLampiran}
+                      aria-label="Hapus lampiran"
+                      className="text-subtle hover:bg-surface-muted hover:text-body grid size-9 shrink-0 place-items-center rounded-full transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+
+                <Hint>
+                  {menyiapkanLampiran
+                    ? "Menyiapkan foto…"
+                    : pratinjauLampiran
+                      ? "Tekan salah satu tombol lagi untuk mengganti fotonya."
+                      : "Boleh dikosongkan. Suratnya bisa menyusul ke atasan bila belum ada."}
+                </Hint>
               </div>
             )}
           </>
@@ -375,7 +501,7 @@ export function FormPengajuan({
 
         <button
           type="submit"
-          disabled={sedang || Boolean(kurang)}
+          disabled={sedang || menyiapkanLampiran || Boolean(kurang)}
           className="bg-brand-600 hover:bg-brand-700 active:bg-brand-800 mt-2 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white transition-colors disabled:opacity-50"
         >
           {sedang && <Loader2 size={17} className="animate-spin" />}

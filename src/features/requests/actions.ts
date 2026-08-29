@@ -147,12 +147,16 @@ export async function aksiAjukanCuti(
     return { ok: false, pesan: err instanceof Error ? err.message : "Lampiran gagal." };
   }
 
-  if (jenis.butuhLampiran && !lampiran && jumlahHari > 1) {
-    return {
-      ok: false,
-      pesan: `${jenis.nama} lebih dari satu hari wajib melampirkan bukti.`,
-    };
-  }
+  /*
+   * Lampiran tidak pernah menahan pengajuan.
+   *
+   * Dahulu sakit lebih dari sehari wajib melampirkan bukti, dan itu menahan
+   * hal yang paling mendesak justru pada saat paling tidak memungkinkan:
+   * orang yang baru jatuh sakit pagi ini belum sempat ke dokter, sehingga
+   * ketidakhadirannya tidak tercatat sama sekali dan berujung alpa. Suratnya
+   * bisa menyusul ke atasan, dan penyetuju tetap bisa menolak bila memang
+   * tidak pernah datang.
+   */
 
   const tahun = Number(d.mulai.slice(0, 4));
   const potongKuota = !izin && jenis.kuotaDefault > 0;
