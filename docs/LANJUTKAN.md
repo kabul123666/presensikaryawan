@@ -225,6 +225,12 @@ dibuat. Saran: tetapkan shift di awal periode berikutnya, bukan di tengah.
   toleransi lokasi, sehingga ponsel bersinyal buruk menampilkan "berada di
   area" lalu absennya tetap diminta beralasan. Keduanya kini lewat
   `marginAkurasi()` di `gunakan-lokasi.ts`.
+- **Server Action punya batas badan permintaan 1 MB, dan itu bawaan Next.**
+  Lampiran pengajuan sempat selalu gagal dengan layar "A server error occurred"
+  karena foto kamera ponsel 2–5 MB ditolak sebelum kode aplikasi berjalan —
+  jadi pesan galat aplikasi tidak pernah sempat muncul. Batasnya kini 8 MB di
+  `next.config.ts`, dan fotonya diperkecil dulu di peramban lewat
+  `kecilkan-foto.ts`. Setiap kolom unggahan baru wajib lewat pengecil itu.
 - **Periode rekap belum tentu bulan kalender.** Ambil rentangnya lewat
   `rentangPeriode()`, jangan memanggil `batasBulan()` sendiri — layar, halaman
   rincian, dan berkas unduhan harus memotong periode di tanggal yang sama.
@@ -249,7 +255,8 @@ layar absen bergaya peta penuh di menu Presensi · rekap kehadiran berbentuk
 kartu per hari · pemilih warna aplikasi · ikon menu datar · periode rekap
 mengikuti siklus gaji · kunci periode · antrean tinjau anomali · ekspor rekap
 berikut rincian fee · sesi absen yang tereset tiap ganti hari · izin dan sakit
-tanpa kuota · kolom Izin terpisah di rekap.
+tanpa kuota · kolom Izin terpisah di rekap · unduhan Excel rincian harian per
+karyawan · lampiran surat dokter dari galeri atau kamera.
 
 Tampilan karyawan punya dua bentuk dari satu berkas halaman. Di bawah lebar
 `lg` (1024px): satu kolom selebar 430px dengan bilah bawah, seperti sebelumnya.
