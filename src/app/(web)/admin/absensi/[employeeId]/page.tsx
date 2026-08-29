@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, Download, MapPin } from "lucide-react";
 
 import { BadgeAbsen } from "@/components/ui/status";
 import { Badge } from "@/components/ui/status";
@@ -10,8 +10,7 @@ import { departments, employees, positions, users } from "@/db/schema";
 import { rekapPeriodeAtauKunci } from "@/features/reports/kunci";
 import { detailHarian, rentangPeriode } from "@/features/reports/service";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
-import { lingkupData } from "@/lib/auth/session";
-import { wajibAksesMenu } from "@/lib/auth/akses";
+import { bolehLihatKaryawan, wajibAksesMenu } from "@/lib/auth/akses";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
 import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
 
@@ -62,16 +61,10 @@ export default async function HalamanDetailAbsensi({
   /*
    * Kepala unit hanya boleh membuka anggota departemennya sendiri, pemilik
    * hanya karyawan cabang miliknya. Diperiksa di server, bukan sekadar
-   * disembunyikan dari daftar.
+   * disembunyikan dari daftar — dan lewat penjaga yang sama dengan yang
+   * dipakai berkas unduhannya.
    */
-  const lingkup = await lingkupData(pengguna);
-  const diLuarDepartemen =
-    lingkup.departmentId !== null && karyawan.departmentId !== lingkup.departmentId;
-  const diLuarCabang =
-    lingkup.locationIds !== null &&
-    (karyawan.locationId === null || !lingkup.locationIds.includes(karyawan.locationId));
-
-  if (!lingkup.semua && (diLuarDepartemen || diLuarCabang)) {
+  if (!(await bolehLihatKaryawan(pengguna, karyawan))) {
     redirect("/tidak-berwenang");
   }
 
@@ -103,8 +96,14 @@ export default async function HalamanDetailAbsensi({
             {namaBulan(tahun, bulan)}
           </p>
         </div>
-        <div className="print:hidden">
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
           <TombolCetak label="Cetak rincian" />
+          <a
+            href={`/api/ekspor/absensi/karyawan?karyawan=${employeeId}&tahun=${tahun}&bulan=${bulan}`}
+            className="bg-brand-600 hover:bg-brand-700 inline-flex h-10 items-center gap-1.5 rounded-[var(--radius-input)] px-4 text-sm font-semibold text-white shadow-[var(--shadow-brand)] transition-colors"
+          >
+            <Download size={15} /> Unduh Excel
+          </a>
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import { bacaPengaturan, SEMUA_KUNCI_MENU } from "@/features/settings/service";
-import { PERAN_PENYETUJU, wajibPeran, type PenggunaSesi } from "./session";
+import { lingkupData, PERAN_PENYETUJU, wajibPeran, type PenggunaSesi } from "./session";
 
 /**
  * Penjaga modul admin.
@@ -45,4 +45,31 @@ export async function aksesMenuPengguna(pengguna: PenggunaSesi): Promise<string[
     : pengguna.role === "OWNER"
       ? akses.OWNER
       : akses.MANAGER;
+}
+
+/**
+ * Apakah seorang penyetuju boleh melihat data seorang karyawan tertentu.
+ *
+ * Batasnya sama dengan yang dipakai menyempitkan kueri daftar: kepala unit
+ * sebatas departemennya, pemilik sebatas cabangnya. Dikumpulkan di sini karena
+ * pemeriksaan yang sama dibutuhkan halaman rincian maupun berkas unduhannya —
+ * dan berkas unduhan menempuh jalur sendiri, jadi tidak pernah mewarisi
+ * pemeriksaan halaman.
+ */
+export async function bolehLihatKaryawan(
+  pengguna: PenggunaSesi,
+  karyawan: { departmentId: string | null; locationId: string | null },
+): Promise<boolean> {
+  const lingkup = await lingkupData(pengguna);
+  if (lingkup.semua) return true;
+
+  if (lingkup.departmentId !== null) {
+    return karyawan.departmentId === lingkup.departmentId;
+  }
+  if (lingkup.locationIds !== null) {
+    return Boolean(
+      karyawan.locationId && lingkup.locationIds.includes(karyawan.locationId),
+    );
+  }
+  return false;
 }

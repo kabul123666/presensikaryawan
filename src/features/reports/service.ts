@@ -24,6 +24,7 @@ import {
   shifts,
   users,
   workLogItems,
+  type AttendanceStatus,
 } from "@/db/schema";
 import { bacaPengaturan } from "@/features/settings/service";
 import { PERAN_TANPA_ABSEN } from "@/lib/auth/session";
@@ -448,6 +449,219 @@ export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, nu
     }
 
     if (alpa > 0) hasil[k.id] = alpa;
+  }
+
+  return hasil;
+}
+
+/* ==========================================================================
+ * Rincian harian satu karyawan
+ * ========================================================================== */
+
+/** Nama manusia untuk status absensi. Dipakai berkas unduhan dan cetakan. */
+export const LABEL_STATUS_ABSEN: Record<AttendanceStatus, string> = {
+  ON_TIME: "Tepat waktu",
+  LATE: "Terlambat",
+  EARLY_LEAVE: "Pulang cepat",
+  OVERTIME: "Lembur",
+  ABSENT: "Alpa",
+  ON_LEAVE: "Cuti",
+  ON_PERMIT: "Izin / Sakit",
+  HOLIDAY: "Libur nasional",
+  DAY_OFF: "Libur",
+  INCOMPLETE: "Belum lengkap",
+};
+
+export type HariRekap = {
+  tanggal: string;
+  shift: string | null;
+  status: string;
+  keterangan: string | null;
+  clockInAt: Date | null;
+  clockOutAt: Date | null;
+  durasiKerjaMenit: number;
+  menitTerlambat: number;
+  menitLembur: number;
+  alamat: string | null;
+  jarakM: number | null;
+  catatanKerja: string | null;
+  penanda: string[];
+  hasilKoreksi: boolean;
+  /** Hari kerja terjadwal yang lewat tanpa catatan absensi sama sekali. */
+  alpa: boolean;
+  /** Hari yang memang tidak dijadwalkan bekerja — dibuat pudar di berkas. */
+  libur: boolean;
+};
+
+/**
+ * Satu baris untuk setiap tanggal dalam periode, bukan hanya tanggal yang
+ * punya baris absensi.
+ *
+ * Rekap per karyawan yang dipakai menghitung gaji harus memperlihatkan hari
+ * yang kosong justru karena kosongnya: tanpa itu pembaca berkas tidak bisa
+ * membedakan hari libur dari hari yang ditinggalkan begitu saja.
+ *
+ * Aturan penentuan alpanya sengaja sama persis dengan `hitungAlpa` — hari
+ * libur nasional, roster yang menandai libur, shift bawaan yang tidak
+ * mencakup hari itu, tanggal sebelum karyawan bergabung, dan tanggal yang
+ * belum lewat semuanya bukan alpa. Kalau salah satunya diubah di sana, ubah
+ * juga di sini; keduanya harus menghasilkan angka yang sama.
+ */
+export async function rincianHarianLengkap(
+  employeeId: string,
+  mulai: string,
+  akhir: string,
+): Promise<HariRekap[]> {
+  const db = await getDb();
+
+  const [karyawan] = await db
+    .select({
+      tanggalMasuk: employees.tanggalMasuk,
+      hariKerja: shifts.hariKerja,
+      namaShift: shifts.nama,
+    })
+    .from(employees)
+    .leftJoin(shifts, eq(shifts.id, employees.shiftId))
+    .where(eq(employees.id, employeeId))
+    .limit(1);
+
+  const [catatan, liburNasional, roster] = await Promise.all([
+    detailHarian({ mulai, akhir, employeeId }),
+
+    db
+      .select({ tanggal: holidays.tanggal, nama: holidays.nama })
+      .from(holidays)
+      .where(and(gte(holidays.tanggal, mulai), lte(holidays.tanggal, akhir))),
+
+    db
+      .select({
+        tanggal: shiftSchedules.tanggal,
+        libur: shiftSchedules.libur,
+        shiftId: shiftSchedules.shiftId,
+        nama: shifts.nama,
+      })
+      .from(shiftSchedules)
+      .leftJoin(shifts, eq(shifts.id, shiftSchedules.shiftId))
+      .where(
+        and(
+          eq(shiftSchedules.employeeId, employeeId),
+          gte(shiftSchedules.tanggal, mulai),
+          lte(shiftSchedules.tanggal, akhir),
+        ),
+      ),
+  ]);
+
+  const petaCatatan = new Map(catatan.map((c) => [c.tanggal, c] as const));
+  const petaLibur = new Map(liburNasional.map((h) => [h.tanggal, h.nama] as const));
+  const petaRoster = new Map(roster.map((r) => [r.tanggal, r] as const));
+
+  const kemarin = geserTanggal(tanggalWIB(), -1);
+  const hasil: HariRekap[] = [];
+
+  for (const tanggal of rentangTanggal(mulai, akhir)) {
+    const baris = petaCatatan.get(tanggal);
+    const jadwal = petaRoster.get(tanggal);
+    const namaLibur = petaLibur.get(tanggal) ?? null;
+
+    if (baris) {
+      hasil.push({
+        tanggal,
+        shift: baris.shift ?? jadwal?.nama ?? karyawan?.namaShift ?? null,
+        status: LABEL_STATUS_ABSEN[baris.status],
+        keterangan: namaLibur,
+        clockInAt: baris.clockInAt,
+        clockOutAt: baris.clockOutAt,
+        durasiKerjaMenit: baris.durasiKerjaMenit,
+        menitTerlambat: baris.menitTerlambat,
+        menitLembur: baris.menitLembur,
+        alamat: baris.clockInAddress,
+        jarakM: baris.clockInDistanceM,
+        catatanKerja: baris.catatanKerja,
+        penanda: baris.flags,
+        hasilKoreksi: baris.hasilKoreksi,
+        alpa: false,
+        libur: false,
+      });
+      continue;
+    }
+
+    const kosong = {
+      tanggal,
+      shift: jadwal?.nama ?? karyawan?.namaShift ?? null,
+      clockInAt: null,
+      clockOutAt: null,
+      durasiKerjaMenit: 0,
+      menitTerlambat: 0,
+      menitLembur: 0,
+      alamat: null,
+      jarakM: null,
+      catatanKerja: null,
+      penanda: [] as string[],
+      hasilKoreksi: false,
+    };
+
+    if (karyawan?.tanggalMasuk && tanggal < karyawan.tanggalMasuk) {
+      hasil.push({
+        ...kosong,
+        status: "—",
+        keterangan: "Belum bergabung",
+        alpa: false,
+        libur: true,
+      });
+      continue;
+    }
+
+    if (namaLibur) {
+      hasil.push({
+        ...kosong,
+        status: LABEL_STATUS_ABSEN.HOLIDAY,
+        keterangan: namaLibur,
+        alpa: false,
+        libur: true,
+      });
+      continue;
+    }
+
+    const dow = hariPekanWIB(new Date(`${tanggal}T05:00:00Z`));
+    const terjadwal = jadwal
+      ? !jadwal.libur && Boolean(jadwal.shiftId)
+      : Boolean(karyawan?.hariKerja?.includes(dow));
+
+    if (!terjadwal) {
+      hasil.push({
+        ...kosong,
+        shift: null,
+        status: LABEL_STATUS_ABSEN.DAY_OFF,
+        keterangan: jadwal?.libur
+          ? "Libur terjadwal"
+          : karyawan?.hariKerja
+            ? "Bukan hari kerja shift"
+            : "Tidak dijadwalkan",
+        alpa: false,
+        libur: true,
+      });
+      continue;
+    }
+
+    // Hari ini belum tentu selesai, jadi belum bisa disebut alpa.
+    if (tanggal > kemarin) {
+      hasil.push({
+        ...kosong,
+        status: "—",
+        keterangan: "Belum berjalan",
+        alpa: false,
+        libur: false,
+      });
+      continue;
+    }
+
+    hasil.push({
+      ...kosong,
+      status: LABEL_STATUS_ABSEN.ABSENT,
+      keterangan: "Tanpa keterangan",
+      alpa: true,
+      libur: false,
+    });
   }
 
   return hasil;

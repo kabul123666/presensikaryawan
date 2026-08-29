@@ -7,7 +7,8 @@ import {
   totalRekap,
 } from "@/features/reports/service";
 import { bacaPengaturan } from "@/features/settings/service";
-import { lingkupData, PERAN_PENYETUJU, wajibPeran } from "@/lib/auth/session";
+import { wajibAksesMenu } from "@/lib/auth/akses";
+import { lingkupData } from "@/lib/auth/session";
 import { namaBulan, tanggalPendek, tanggalWIB } from "@/lib/waktu";
 
 /**
@@ -18,7 +19,10 @@ import { namaBulan, tanggalPendek, tanggalWIB } from "@/lib/waktu";
  * admin sebelum menekan tombol unduh.
  */
 export async function GET(request: Request) {
-  const pengguna = await wajibPeran(...PERAN_PENYETUJU);
+  // Penjaganya sama dengan halaman rekap. Sebelumnya berkas ini hanya menuntut
+  // peran penyetuju, jadi modul Absensi yang dicabut lewat Hak Akses Menu tetap
+  // bisa diunduh oleh yang alamatnya sudah tahu.
+  const pengguna = await wajibAksesMenu("absensi");
 
   const url = new URL(request.url);
   const kini = tanggalWIB();
