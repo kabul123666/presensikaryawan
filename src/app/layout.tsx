@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { PenjagaVersi } from "@/components/penjaga-versi";
 import "./globals.css";
 
 /**
@@ -62,7 +63,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${plex.variable} ${plexMono.variable} antialiased`}>
-        {children}
+        <PenjagaVersi>{children}</PenjagaVersi>
       </body>
     </html>
   );

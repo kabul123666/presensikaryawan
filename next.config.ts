@@ -6,6 +6,16 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@electric-sql/pglite", "sharp"],
 
   /*
+   * Penanda versi aplikasi, ditanam ke bundel server dan peramban sekaligus.
+   * Peramban yang masih memegang bundel lama membandingkannya dengan versi
+   * yang dilaporkan /api/versi; bila berbeda, aplikasi dikunci sampai
+   * pengguna menekan Update. Di Vercel nilainya commit yang sedang di-deploy.
+   */
+  env: {
+    NEXT_PUBLIC_VERSI_APLIKASI: process.env.VERCEL_GIT_COMMIT_SHA ?? "lokal",
+  },
+
+  /*
    * Lampiran pengajuan dikirim lewat Server Action, dan batas bawaan badan
    * permintaan Server Action cuma 1 MB — jauh di bawah foto kamera ponsel yang
    * lazimnya 2–5 MB. Yang muncul karena itu bukan pesan galat aplikasi

@@ -2,8 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const COOKIE_SESI = "alia_sesi";
 
-/** Halaman yang boleh diakses tanpa masuk. */
-const RUTE_PUBLIK = ["/masuk", "/daftar", "/lupa-password"];
+/**
+ * Halaman yang boleh diakses tanpa masuk. /api/versi ikut terbuka supaya
+ * pemeriksaan pembaharuan juga berjalan di halaman masuk.
+ */
+const RUTE_PUBLIK = ["/masuk", "/daftar", "/lupa-password", "/api/versi"];
 
 /**
  * Penjaga lapis pertama: hanya memeriksa keberadaan cookie sesi supaya murah
