@@ -159,7 +159,6 @@ export function nilaiClockIn(shift: Shift, waktu: Date) {
  * Tanpa jam pulang tidak ada yang bisa disebut "pulang cepat" atau "lembur" —
  * keduanya hanya bermakna relatif terhadap jadwal. Yang tersisa dan tetap
  * benar adalah lama ia berada di tempat kerja, jadi itu saja yang dicatat.
- * Istirahat pun tidak dipotong karena durasinya ditentukan per shift.
  */
 export function nilaiClockOutTanpaShift(clockInAt: Date, waktu: Date) {
   const durasiKerjaMenit = Math.max(
@@ -198,8 +197,12 @@ export function nilaiClockOut(
     shift.lintasHari && menitSekarang < menitMasuk ? menitSekarang + 1440 : menitSekarang;
   const selisih = sekarangRelatif - akhirShift;
 
-  const durasiKotor = Math.round((waktu.getTime() - clockInAt.getTime()) / 60000);
-  const durasiKerjaMenit = Math.max(0, durasiKotor - shift.istirahatMenit);
+  // Jam kerja dihitung utuh dari absen masuk sampai absen pulang. Klinik ini
+  // tidak memotong jam istirahat: enam jam di tempat kerja tercatat enam jam.
+  const durasiKerjaMenit = Math.max(
+    0,
+    Math.round((waktu.getTime() - clockInAt.getTime()) / 60000),
+  );
 
   const menitLembur = selisih > shift.ambangLemburMenit ? selisih : 0;
   const pulangCepat = selisih < -1;

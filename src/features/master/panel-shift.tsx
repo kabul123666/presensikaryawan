@@ -20,19 +20,18 @@ export type BarisShift = {
   toleransiMenit: number;
   ambangLemburMenit: number;
   hariKerja: number[];
-  istirahatMenit: number;
   batasClockinDiniMenit: number;
   warna: string;
   aktif: boolean;
   jumlahKaryawan: number;
 };
 
-/** Durasi kerja bersih sebuah shift, memperhitungkan lintas hari. */
-function durasiShift(s: Pick<BarisShift, "jamMasuk" | "jamPulang" | "istirahatMenit">) {
+/** Durasi kerja sebuah shift, memperhitungkan lintas hari. */
+function durasiShift(s: Pick<BarisShift, "jamMasuk" | "jamPulang">) {
   const masuk = jamKeMenit(s.jamMasuk);
   const pulang = jamKeMenit(s.jamPulang);
   const kotor = pulang > masuk ? pulang - masuk : 1440 - masuk + pulang;
-  return Math.max(0, kotor - s.istirahatMenit);
+  return kotor;
 }
 
 function FormShift({
@@ -155,18 +154,6 @@ function FormShift({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="istirahatMenit">Durasi istirahat (menit)</Label>
-          <Input
-            id="istirahatMenit"
-            name="istirahatMenit"
-            type="number"
-            min={0}
-            max={240}
-            defaultValue={shift?.istirahatMenit ?? 60}
-            required
-          />
-        </div>
         <div>
           <Label htmlFor="batasClockinDiniMenit">
             Boleh absen berapa menit lebih awal

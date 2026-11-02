@@ -4,6 +4,7 @@ import { and, desc, eq, gte, lte } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import { periodLocks, users } from "@/db/schema";
+import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
 import { rekapPeriode, type BarisRekap, type FilterRekap } from "./service";
 
 /**
@@ -122,7 +123,16 @@ export async function daftarKunci(batas = 24) {
  */
 export async function rekapPeriodeAtauKunci(filter: FilterRekap) {
   const beku = await rekapTerkunci(filter.mulai, filter.akhir);
-  if (!beku) return { baris: await rekapPeriode(filter), terkunci: false };
+  if (!beku) {
+    // Jaring pengaman: absen tanpa shift yang shiftnya sudah ditetapkan admin
+    // dinilai dulu, supaya rekap tidak pernah menampilkan angka yang basi.
+    await nilaiUlangAbsensiTanpaShift({
+      employeeId: filter.employeeId,
+      mulai: filter.mulai,
+      akhir: filter.akhir,
+    });
+    return { baris: await rekapPeriode(filter), terkunci: false };
+  }
 
   // Salinan yang dibekukan sebelum kolom izin ada tidak memuatnya sama sekali;
   // dibaca sebagai nol supaya rekap lama tetap terbuka tanpa angka kosong.
@@ -132,7 +142,7 @@ export async function rekapPeriodeAtauKunci(filter: FilterRekap) {
         (!filter.departmentId || b.departmentId === filter.departmentId) &&
         (!filter.employeeId || b.employeeId === filter.employeeId),
     )
-    .map((b) => ({ ...b, izin: b.izin ?? 0 }));
+    .map((b) => ({ ...b, izin: b.izin ?? 0, jumlahShift: b.jumlahShift ?? b.hadir }));
 
   return { baris, terkunci: true };
 }

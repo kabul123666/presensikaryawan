@@ -27,7 +27,6 @@ export async function daftarShift() {
       toleransiMenit: shifts.toleransiMenit,
       ambangLemburMenit: shifts.ambangLemburMenit,
       hariKerja: shifts.hariKerja,
-      istirahatMenit: shifts.istirahatMenit,
       batasClockinDiniMenit: shifts.batasClockinDiniMenit,
       warna: shifts.warna,
       aktif: shifts.aktif,

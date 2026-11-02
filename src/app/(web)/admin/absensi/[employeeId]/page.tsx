@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { ArrowLeft, Download, MapPin } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Download, MapPin } from "lucide-react";
 
 import { BadgeAbsen } from "@/components/ui/status";
 import { Badge } from "@/components/ui/status";
@@ -12,7 +12,13 @@ import { detailHarian, rentangPeriode } from "@/features/reports/service";
 import { TombolCetak } from "@/features/reports/tombol-cetak";
 import { bolehLihatKaryawan, wajibAksesMenu } from "@/lib/auth/akses";
 import { formatDurasi, formatRupiah } from "@/lib/utils";
-import { jamWIB, namaBulan, tanggalPanjang, tanggalWIB } from "@/lib/waktu";
+import {
+  jamWIB,
+  namaBulan,
+  tanggalPanjang,
+  tanggalPendek,
+  tanggalWIB,
+} from "@/lib/waktu";
 
 const LABEL_FLAG: Record<string, string> = {
   MOCK_GPS: "Indikasi GPS palsu",
@@ -70,12 +76,21 @@ export default async function HalamanDetailAbsensi({
 
   const rentang = await rentangPeriode(tahun, bulan);
 
-  const [detail, hasilRekap] = await Promise.all([
-    detailHarian({ ...rentang, employeeId }),
-    rekapPeriodeAtauKunci({ ...rentang, employeeId }),
-  ]);
+  // Berurutan, bukan paralel: rekap menilai ulang absen tanpa shift lebih
+  // dulu, dan rincian di bawah harus membaca hasil yang sudah dinilai.
+  const hasilRekap = await rekapPeriodeAtauKunci({ ...rentang, employeeId });
+  const detail = await detailHarian({ ...rentang, employeeId });
   const rekap = hasilRekap.baris;
   const ringkas = rekap[0];
+
+  // Riwayat bulan-bulan sebelumnya dibuka langsung dari sini, tanpa harus
+  // kembali ke rekap untuk menggeser periodenya.
+  const geser = (delta: number) => {
+    const m = bulan + delta;
+    const t = tahun + Math.floor((m - 1) / 12);
+    const b = ((((m - 1) % 12) + 12) % 12) + 1;
+    return `/admin/absensi/${employeeId}?bulan=${t}-${String(b).padStart(2, "0")}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -107,10 +122,36 @@ export default async function HalamanDetailAbsensi({
         </div>
       </div>
 
+      <div className="bg-surface border-app flex w-fit items-center rounded-[var(--radius-input)] border print:hidden">
+        <Link
+          href={geser(-1)}
+          className="text-muted hover:bg-surface-muted grid size-10 place-items-center rounded-l-[var(--radius-input)]"
+          aria-label="Bulan sebelumnya"
+        >
+          <ChevronLeft size={18} />
+        </Link>
+        <span className="min-w-44 px-3 text-center">
+          <span className="text-body block text-sm font-bold">
+            {namaBulan(tahun, bulan)}
+          </span>
+          <span className="text-subtle tnum block text-[11px]">
+            {tanggalPendek(rentang.mulai)} – {tanggalPendek(rentang.akhir)}
+          </span>
+        </span>
+        <Link
+          href={geser(1)}
+          className="text-muted hover:bg-surface-muted grid size-10 place-items-center rounded-r-[var(--radius-input)]"
+          aria-label="Bulan berikutnya"
+        >
+          <ChevronRight size={18} />
+        </Link>
+      </div>
+
       {ringkas && (
-        <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
           {[
             { label: "Hadir", nilai: String(ringkas.hadir) },
+            { label: "Jumlah shift", nilai: String(ringkas.jumlahShift) },
             { label: "Terlambat", nilai: String(ringkas.terlambat) },
             { label: "Total telat", nilai: formatDurasi(ringkas.menitTerlambat) },
             { label: "Lembur", nilai: formatDurasi(ringkas.menitLembur) },

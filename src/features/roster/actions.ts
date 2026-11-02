@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { getDb } from "@/db/client";
 import { auditLogs, shiftSchedules } from "@/db/schema";
+import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
 import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
 import { batasBulan, geserTanggal, selisihHari } from "@/lib/waktu";
 
@@ -37,6 +38,13 @@ async function catat(
     ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
     userAgent: h.get("user-agent"),
   });
+}
+
+/** Jadwal berubah berarti penilaian absensi bisa ikut berubah. */
+function segarkanAbsensi() {
+  revalidatePath("/admin/jadwal");
+  revalidatePath("/admin/absensi", "layout");
+  revalidatePath("/riwayat");
 }
 
 /**
@@ -86,7 +94,14 @@ export async function aksiSetJadwal(
       });
   }
 
-  revalidatePath("/admin/jadwal");
+  // Absen yang terlanjur tercatat tanpa shift pada tanggal ini ikut dinilai.
+  await nilaiUlangAbsensiTanpaShift({
+    employeeId: d.employeeId,
+    mulai: d.tanggal,
+    akhir: d.tanggal,
+  });
+
+  segarkanAbsensi();
   return { ok: true, pesan: "Jadwal disimpan." };
 }
 
@@ -118,7 +133,8 @@ export async function aksiIsiSebaris(
     bulan,
     shiftId,
   });
-  revalidatePath("/admin/jadwal");
+  await nilaiUlangAbsensiTanpaShift({ employeeId, mulai, akhir });
+  segarkanAbsensi();
   return { ok: true, pesan: `Satu bulan penuh diisi untuk karyawan ini.` };
 }
 
@@ -143,7 +159,9 @@ export async function aksiKosongkanSebaris(
     );
 
   await catat(pengguna.userId, "KOSONGKAN_ROSTER", employeeId, { tahun, bulan });
-  revalidatePath("/admin/jadwal");
+  // Tanpa jadwal khusus, shift default karyawan yang berlaku.
+  await nilaiUlangAbsensiTanpaShift({ employeeId, mulai, akhir });
+  segarkanAbsensi();
   return { ok: true, pesan: "Jadwal bulan ini dikosongkan." };
 }
 
@@ -208,6 +226,7 @@ export async function aksiSalinBulanLalu(
     dari: `${tahunLalu}-${bulanLalu}`,
     tersalin,
   });
-  revalidatePath("/admin/jadwal");
+  await nilaiUlangAbsensiTanpaShift({ mulai: tujuan.mulai, akhir: tujuan.akhir });
+  segarkanAbsensi();
   return { ok: true, pesan: `${tersalin} jadwal disalin dari bulan sebelumnya.` };
 }

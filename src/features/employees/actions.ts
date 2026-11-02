@@ -17,6 +17,7 @@ import {
   sessions,
   users,
 } from "@/db/schema";
+import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
 import { hashPassword, periksaKekuatanPassword } from "@/lib/auth/password";
 import { PERAN_ADMIN, wajibPeran, buatSesi, cabutSemuaSesi } from "@/lib/auth/session";
 import { tanggalWIB } from "@/lib/waktu";
@@ -470,6 +471,12 @@ export async function aksiUbahKaryawan(
     .where(eq(employees.id, d.employeeId));
 
   await simpanLokasiTambahan(d.employeeId, d.lokasiTambahan, d.locationId || null);
+
+  // Shift default baru ditetapkan: absen yang terlanjur tercatat tanpa shift
+  // ikut dinilai memakai shift itu.
+  if ((d.shiftId || null) !== sebelum.shiftId) {
+    await nilaiUlangAbsensiTanpaShift({ employeeId: d.employeeId });
+  }
 
   if (akun?.role !== "SUPER_ADMIN") {
     await db

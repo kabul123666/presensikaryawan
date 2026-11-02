@@ -198,7 +198,7 @@ export default async function HalamanRekapAbsensi({
           {
             label: "Total kehadiran",
             nilai: String(total.hadir),
-            catatan: `${baris.length} karyawan`,
+            catatan: `${total.jumlahShift} shift · ${baris.length} karyawan`,
             warna: "text-status-ontime",
           },
           {
@@ -249,6 +249,7 @@ export default async function HalamanRekapAbsensi({
                 <tr className="border-app text-subtle border-b text-left text-[11px] font-bold tracking-wide uppercase">
                   <th className="px-5 py-2.5">Karyawan</th>
                   <th className="px-2 py-2.5 text-center">Hadir</th>
+                  <th className="px-2 py-2.5 text-center">Shift</th>
                   <th className="px-2 py-2.5 text-center">Tepat</th>
                   <th className="px-2 py-2.5 text-center">Telat</th>
                   <th className="px-2 py-2.5 text-right">Total telat</th>
@@ -280,6 +281,9 @@ export default async function HalamanRekapAbsensi({
                     </td>
                     <td className="text-body tnum px-2 py-3 text-center font-semibold">
                       {b.hadir}
+                    </td>
+                    <td className="text-body tnum px-2 py-3 text-center font-semibold">
+                      {b.jumlahShift}
                     </td>
                     <td className="text-muted tnum px-2 py-3 text-center">
                       {b.tepatWaktu}
@@ -321,6 +325,7 @@ export default async function HalamanRekapAbsensi({
                 <tr className="bg-surface-muted text-body border-app border-t-2 font-extrabold">
                   <td className="px-5 py-3">TOTAL</td>
                   <td className="tnum px-2 py-3 text-center">{total.hadir}</td>
+                  <td className="tnum px-2 py-3 text-center">{total.jumlahShift}</td>
                   <td />
                   <td className="tnum px-2 py-3 text-center">{total.terlambat}</td>
                   <td className="tnum px-2 py-3 text-right">

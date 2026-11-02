@@ -38,6 +38,8 @@ type Props = {
   } | null;
   isiFormTindakan: boolean;
   daftarTindakan: Tindakan[];
+  /** Kepala unit: boleh absen dari mana saja, tanpa menunggu shift dan cabangnya diatur. */
+  bebasLokasi: boolean;
 };
 
 /**
@@ -62,6 +64,7 @@ export function LayarAbsen({
   lokasi,
   isiFormTindakan,
   daftarTindakan,
+  bebasLokasi,
 }: Props) {
   const router = useRouter();
   const jam = useJamDetik();
@@ -79,7 +82,7 @@ export function LayarAbsen({
 
   const mode = sudahMasuk ? "pulang" : "masuk";
   const selesai = sudahMasuk && sudahPulang;
-  const bisaAbsen = Boolean(jadwal) || bolehTanpaShift || sudahMasuk;
+  const bisaAbsen = Boolean(jadwal) || bolehTanpaShift || sudahMasuk || bebasLokasi;
 
   /**
    * Alamat dicari ulang hanya ketika posisinya bergeser cukup jauh.
@@ -128,7 +131,9 @@ export function LayarAbsen({
           ) : (
             <div className="grid h-full place-items-center px-8 text-center">
               <p className="text-muted text-sm">
-                Lokasi kerja Anda belum diatur admin, jadi areanya belum bisa digambar.
+                {bebasLokasi
+                  ? "Sebagai kepala unit, Anda boleh absen dari lokasi mana pun."
+                  : "Lokasi kerja Anda belum diatur admin, jadi areanya belum bisa digambar."}
               </p>
             </div>
           )}
@@ -161,7 +166,7 @@ export function LayarAbsen({
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold shadow-[var(--shadow-soft)]",
                 !posisi
                   ? "bg-surface text-muted"
-                  : diLuarArea
+                  : diLuarArea && !bebasLokasi
                     ? "bg-danger-600 text-white"
                     : "bg-brand-600 text-white",
               )}
@@ -170,8 +175,12 @@ export function LayarAbsen({
                 <>
                   <Loader2 size={13} className="animate-spin" /> Membaca lokasi…
                 </>
+              ) : jarak === null ? (
+                <>Lokasi terbaca</>
               ) : diLuarArea ? (
-                <>Di luar area · {jarak} m</>
+                <>
+                  Di luar area · {jarak} m{bebasLokasi ? " · WFH" : ""}
+                </>
               ) : (
                 <>Di dalam area · {jarak} m</>
               )}
@@ -233,7 +242,7 @@ export function LayarAbsen({
           >
             {jadwal
               ? `Shift ${jadwal.nama} · lihat jadwal sebulan`
-              : bolehTanpaShift
+              : bolehTanpaShift || bebasLokasi
                 ? "Tanpa shift terjadwal · kehadiran tetap tercatat"
                 : "Shift belum diatur — hubungi HRD"}
           </Link>
@@ -274,6 +283,7 @@ export function LayarAbsen({
           lokasi={lokasi}
           isiFormTindakan={isiFormTindakan}
           daftarTindakan={daftarTindakan}
+          bebasLokasi={bebasLokasi}
           onTutup={() => setPanelTerbuka(false)}
           onBerhasil={() => {
             setPanelTerbuka(false);

@@ -62,6 +62,8 @@ export type BarisRekap = {
   departemen: string | null;
   departmentId: string | null;
   hadir: number;
+  /** Hadir dalam hitungan shift: satu kali jaga "Full" dihitung dua shift. */
+  jumlahShift: number;
   tepatWaktu: number;
   terlambat: number;
   menitTerlambat: number;
@@ -76,6 +78,17 @@ export type BarisRekap = {
   menitKerja: number;
   totalFee: number;
 };
+
+/**
+ * Shift yang namanya memuat kata ini dihitung dua shift di rekap.
+ *
+ * Disepakati dengan pemilik proyek: "Full" adalah dua shift (pagi dan siang)
+ * yang dijalani satu orang tanpa pulang, jadi hitungan jaganya dua.
+ */
+const POLA_FULL_SHIFT = "%full%";
+
+/** Nilai satu kali hadir dalam hitungan shift. */
+const nilaiShiftSql = sql<number>`case when ${shifts.nama} ilike ${POLA_FULL_SHIFT} then 2 else 1 end`;
 
 function syaratPeriode(filter: FilterRekap) {
   const { mulai, akhir } = filter;
@@ -122,6 +135,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
       departemen: departments.nama,
       departmentId: employees.departmentId,
       hadir: sql<number>`count(*) filter (where ${attendances.clockInAt} is not null)`,
+      jumlahShift: sql<number>`coalesce(sum(${nilaiShiftSql}) filter (where ${attendances.clockInAt} is not null), 0)`,
       tepatWaktu: sql<number>`count(*) filter (where ${attendances.status} = 'ON_TIME')`,
       terlambat: sql<number>`count(*) filter (where ${attendances.menitTerlambat} > 0)`,
       menitTerlambat: sql<number>`coalesce(sum(${attendances.menitTerlambat}), 0)`,
@@ -139,6 +153,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
     .innerJoin(users, eq(users.id, employees.userId))
     .leftJoin(positions, eq(positions.id, employees.positionId))
     .leftJoin(departments, eq(departments.id, employees.departmentId))
+    .leftJoin(shifts, eq(shifts.id, attendances.shiftId))
     .where(and(...syarat))
     .groupBy(
       employees.id,
@@ -176,6 +191,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
     departemen: b.departemen,
     departmentId: b.departmentId,
     hadir: Number(b.hadir),
+    jumlahShift: Number(b.jumlahShift),
     tepatWaktu: Number(b.tepatWaktu),
     terlambat: Number(b.terlambat),
     menitTerlambat: Number(b.menitTerlambat),
@@ -216,6 +232,7 @@ export async function rekapPeriode(filter: FilterRekap): Promise<BarisRekap[]> {
       hasil.push({
         ...t,
         hadir: 0,
+        jumlahShift: 0,
         tepatWaktu: 0,
         terlambat: 0,
         menitTerlambat: 0,
@@ -306,6 +323,7 @@ export function totalRekap(baris: BarisRekap[]) {
   return baris.reduce(
     (t, b) => ({
       hadir: t.hadir + b.hadir,
+      jumlahShift: t.jumlahShift + b.jumlahShift,
       terlambat: t.terlambat + b.terlambat,
       menitTerlambat: t.menitTerlambat + b.menitTerlambat,
       menitLembur: t.menitLembur + b.menitLembur,
@@ -317,6 +335,7 @@ export function totalRekap(baris: BarisRekap[]) {
     }),
     {
       hadir: 0,
+      jumlahShift: 0,
       terlambat: 0,
       menitTerlambat: 0,
       menitLembur: 0,

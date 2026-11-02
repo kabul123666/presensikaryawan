@@ -36,6 +36,8 @@ type Props = {
   } | null;
   isiFormTindakan: boolean;
   daftarTindakan: Tindakan[];
+  /** Kepala unit: jarak tidak diperiksa, di luar area tercatat sebagai WFH. */
+  bebasLokasi: boolean;
   onTutup: () => void;
   onBerhasil: () => void;
 };
@@ -52,6 +54,7 @@ export function PanelAbsen({
   lokasi,
   isiFormTindakan,
   daftarTindakan,
+  bebasLokasi,
   onTutup,
   onBerhasil,
 }: Props) {
@@ -188,7 +191,11 @@ export function PanelAbsen({
 
   const judul = mode === "masuk" ? "Absen Masuk" : "Absen Pulang";
   const catatanKurang = mode === "pulang" && catatanKerja.trim().length < 10;
-  const alasanKurang = diLuarArea && alasan.trim().length < 5;
+  // Alasan diminta untuk absen di luar area, dan untuk absen di hari yang
+  // menurut server bukan hari kerja (kode BUTUH_ALASAN). Tanpa kolom ini,
+  // karyawan yang tetap masuk di hari liburnya tidak punya cara mengisinya.
+  const perluAlasan = (diLuarArea && !bebasLokasi) || hasil?.kode === "BUTUH_ALASAN";
+  const alasanKurang = perluAlasan && alasan.trim().length < 5;
 
   /* ==================================================================== */
 
@@ -294,12 +301,20 @@ export function PanelAbsen({
                     {posisi && (
                       <>
                         <p className="text-body text-sm font-bold">
-                          {diLuarArea ? "Di luar area kantor" : "Berada di area kantor"}
+                          {!lokasi
+                            ? "Lokasi terbaca"
+                            : diLuarArea
+                              ? bebasLokasi
+                                ? "Di luar area kantor · tercatat WFH"
+                                : "Di luar area kantor"
+                              : "Berada di area kantor"}
                         </p>
                         <p className="text-muted tnum mt-0.5 text-[13px]">
                           {lokasi
                             ? `${jarak} m dari ${lokasi.nama}`
-                            : "Lokasi kerja belum diatur"}
+                            : bebasLokasi
+                              ? "Kepala unit · bebas lokasi"
+                              : "Lokasi kerja belum diatur"}
                           {" · "}akurasi ±{Math.round(posisi.akurasi)} m
                         </p>
                         <button
@@ -403,7 +418,7 @@ export function PanelAbsen({
               </div>
 
               {/* -------------------------------------------------- Alasan */}
-              {tahap === "form" && diLuarArea && (
+              {tahap === "form" && perluAlasan && (
                 <div className="border-warn-500/40 bg-warn-50 dark:bg-warn-500/10 mt-4 rounded-[var(--radius-card)] border p-4">
                   <div className="flex items-center gap-2">
                     <AlertTriangle
@@ -411,11 +426,13 @@ export function PanelAbsen({
                       size={17}
                     />
                     <p className="text-warn-700 dark:text-warn-100 text-sm font-bold">
-                      Anda di luar radius kantor
+                      {diLuarArea && !bebasLokasi
+                        ? "Anda di luar radius kantor"
+                        : "Hari ini bukan jadwal kerja Anda"}
                     </p>
                   </div>
                   <p className="text-warn-700/85 dark:text-warn-100/80 mt-1.5 text-[13px]">
-                    Absen tetap tercatat, namun perlu persetujuan admin.
+                    Absen tetap tercatat dan ditandai untuk ditinjau admin. Isi alasannya.
                   </p>
                   <Textarea
                     value={alasan}
@@ -600,7 +617,7 @@ export function PanelAbsen({
             {(catatanKurang || alasanKurang) && (
               <p className="text-subtle mt-2 text-center text-xs">
                 {alasanKurang
-                  ? "Isi alasan absen di luar area terlebih dahulu"
+                  ? "Isi alasan absen terlebih dahulu"
                   : "Catatan pekerjaan minimal 10 karakter"}
               </p>
             )}

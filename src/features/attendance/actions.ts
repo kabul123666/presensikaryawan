@@ -191,6 +191,63 @@ async function pilihLokasi(
   return terbaik;
 }
 
+/**
+ * Lokasi yang dipakai menilai absen kali ini, beserta keputusan geofence-nya.
+ *
+ * Kepala unit boleh absen dari mana saja — itulah bentuk WFH di sini — dan
+ * tidak perlu menunggu admin mengatur cabangnya lebih dulu. Bila cabangnya
+ * ada, jaraknya tetap dicatat supaya rekap tahu ia di klinik atau di luar;
+ * bila belum ada, absennya tetap diterima tanpa jarak.
+ *
+ * Peran lain tidak ikut: bagi mereka kebijakan geofence lokasi berlaku apa
+ * adanya, termasuk penolakan bila lokasinya berkebijakan BLOCK.
+ */
+async function nilaiLokasiAbsen(
+  pengguna: PenggunaSesi,
+  posisi: z.infer<typeof skemaPosisi>,
+): Promise<
+  | {
+      ok: true;
+      namaLokasi: string | null;
+      jarakM: number | null;
+      diLuarArea: boolean;
+      wfh: boolean;
+    }
+  | { ok: false; hasil: HasilAbsen }
+> {
+  const bebasLokasi = pengguna.role === "MANAGER";
+  const terpilih = await pilihLokasi(pengguna, posisi);
+
+  if (!terpilih) {
+    if (bebasLokasi) {
+      return { ok: true, namaLokasi: null, jarakM: null, diLuarArea: false, wfh: true };
+    }
+    return {
+      ok: false,
+      hasil: { ok: false, pesan: "Lokasi kerja Anda belum diatur. Hubungi HRD." },
+    };
+  }
+
+  const { lokasi, geo } = terpilih;
+
+  if (!bebasLokasi) {
+    if (!geo.diizinkan) {
+      return { ok: false, hasil: { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" } };
+    }
+    if (geo.butuhAlasan && !posisi.alasan) {
+      return { ok: false, hasil: { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" } };
+    }
+  }
+
+  return {
+    ok: true,
+    namaLokasi: lokasi.nama,
+    jarakM: geo.jarakM,
+    diLuarArea: geo.diLuarArea,
+    wfh: bebasLokasi && geo.diLuarArea,
+  };
+}
+
 /* ========================================================================== */
 
 export async function aksiClockIn(
@@ -233,7 +290,8 @@ export async function aksiClockIn(
     tanggal,
   );
   const { izinkanAbsenTanpaShift } = await bacaPengaturan("kebijakan_absensi");
-  if (!shift && !izinkanAbsenTanpaShift) {
+  // Kepala unit tidak menunggu jadwalnya diatur admin untuk bisa absen.
+  if (!shift && !izinkanAbsenTanpaShift && pengguna.role !== "MANAGER") {
     return {
       ok: false,
       pesan: "Shift Anda belum diatur. Hubungi HRD untuk penetapan jadwal kerja.",
@@ -247,12 +305,6 @@ export async function aksiClockIn(
     };
   }
 
-  const terpilih = await pilihLokasi(pengguna, posisi);
-  if (!terpilih) {
-    return { ok: false, pesan: "Lokasi kerja Anda belum diatur. Hubungi HRD." };
-  }
-  const { lokasi, geo } = terpilih;
-
   /*
    * Kepala unit boleh absen dari luar area — itulah bentuk WFH di sini.
    *
@@ -261,18 +313,10 @@ export async function aksiClockIn(
    * sebelumnya justru membuat hari yang mendadak jadi tidak tercatat sama
    * sekali. Alurnya sama persis dengan absen biasa, foto selfie tetap wajib,
    * hanya pemeriksaan jaraknya yang dilewati.
-   *
-   * Peran lain tidak ikut: bagi mereka kebijakan geofence lokasi berlaku apa
-   * adanya, termasuk penolakan bila lokasinya berkebijakan BLOCK.
    */
-  const wfh = pengguna.role === "MANAGER" && geo.diLuarArea;
-
-  if (!wfh) {
-    if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
-    if (geo.butuhAlasan && !posisi.alasan) {
-      return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
-    }
-  }
+  const area = await nilaiLokasiAbsen(pengguna, posisi);
+  if (!area.ok) return area.hasil;
+  const { wfh } = area;
 
   // Tanpa shift tidak ada jam masuk untuk dibandingkan, jadi kehadiran dicatat
   // apa adanya: hadir, tanpa hitungan terlambat dan tanpa batas absen dini.
@@ -292,7 +336,8 @@ export async function aksiClockIn(
   if (posisi.mockLocation) flags.push("MOCK_GPS");
   // WFH bukan anomali, jadi ditandai berbeda supaya tidak mengotori antrean
   // tinjau admin dengan kejadian yang memang sudah diizinkan.
-  if (geo.diLuarArea) flags.push(wfh ? "WFH" : "DILUAR_AREA");
+  if (wfh) flags.push("WFH");
+  else if (area.diLuarArea) flags.push("DILUAR_AREA");
   if (libur) flags.push("HARI_LIBUR");
   if (!shift) {
     flags.push("TANPA_SHIFT");
@@ -308,9 +353,9 @@ export async function aksiClockIn(
     lat: posisi.lat,
     lng: posisi.lng,
     akurasiM: posisi.akurasi,
-    diLuarArea: geo.diLuarArea,
-    jarakM: geo.jarakM,
-    namaLokasi: lokasi.nama,
+    diLuarArea: area.diLuarArea,
+    jarakM: area.jarakM,
+    namaLokasi: area.namaLokasi,
     namaKaryawan: pengguna.nama,
   });
 
@@ -333,8 +378,8 @@ export async function aksiClockIn(
       clockInLng: posisi.lng,
       clockInAccuracy: posisi.akurasi,
       clockInAddress: alamat,
-      clockInDistanceM: geo.jarakM,
-      clockInOutsideArea: geo.diLuarArea,
+      clockInDistanceM: area.jarakM,
+      clockInOutsideArea: area.diLuarArea,
       clockInReason: posisi.alasan ?? null,
       menitTerlambat: nilai.menitTerlambat,
       flags,
@@ -347,7 +392,7 @@ export async function aksiClockIn(
     aksi: "CLOCK_IN",
     entitas: "attendances",
     entitasId: baris.id,
-    after: { tanggal, status: nilai.status, jarakM: geo.jarakM, flags },
+    after: { tanggal, status: nilai.status, jarakM: area.jarakM, flags },
     ip: info.ip,
     userAgent: info.userAgent,
   });
@@ -405,21 +450,10 @@ export async function aksiClockOut(
   // absen masuk harus selalu bisa menutup sesinya, apa pun keadaan jadwalnya.
   const { shift } = await shiftBerlaku(pengguna.employeeId, aktif.tanggal);
 
-  const terpilih = await pilihLokasi(pengguna, posisi);
-  if (!terpilih) {
-    return { ok: false, pesan: "Lokasi kerja belum diatur. Hubungi HRD." };
-  }
-  const { lokasi, geo } = terpilih;
-
-  // Sama seperti absen masuk: kepala unit boleh menutup harinya dari rumah.
-  const wfh = pengguna.role === "MANAGER" && geo.diLuarArea;
-
-  if (!wfh) {
-    if (!geo.diizinkan) return { ok: false, pesan: geo.pesan, kode: "DILUAR_AREA" };
-    if (geo.butuhAlasan && !posisi.alasan) {
-      return { ok: false, pesan: geo.pesan, kode: "BUTUH_ALASAN" };
-    }
-  }
+  // Sama seperti absen masuk: kepala unit boleh menutup harinya dari mana saja.
+  const area = await nilaiLokasiAbsen(pengguna, posisi);
+  if (!area.ok) return area.hasil;
+  const { wfh } = area;
 
   // --- Tindakan: nominal fee SELALU diambil dari master data di server.
   // Angka yang dikirim klien tidak pernah dipakai.
@@ -453,9 +487,9 @@ export async function aksiClockOut(
     lat: posisi.lat,
     lng: posisi.lng,
     akurasiM: posisi.akurasi,
-    diLuarArea: geo.diLuarArea,
-    jarakM: geo.jarakM,
-    namaLokasi: lokasi.nama,
+    diLuarArea: area.diLuarArea,
+    jarakM: area.jarakM,
+    namaLokasi: area.namaLokasi,
     namaKaryawan: pengguna.nama,
   });
 
@@ -466,8 +500,8 @@ export async function aksiClockOut(
 
   const flags = [...aktif.flags];
   if (simpanan.gagal && !flags.includes("FOTO_GAGAL")) flags.push("FOTO_GAGAL");
-  const penandaPulang = wfh ? "WFH" : "DILUAR_AREA_PULANG";
-  if (geo.diLuarArea && !flags.includes(penandaPulang)) {
+  const penandaPulang = wfh ? "WFH" : area.diLuarArea ? "DILUAR_AREA_PULANG" : null;
+  if (penandaPulang && !flags.includes(penandaPulang)) {
     flags.push(penandaPulang);
   }
 
@@ -481,8 +515,8 @@ export async function aksiClockOut(
       clockOutLng: posisi.lng,
       clockOutAccuracy: posisi.akurasi,
       clockOutAddress: alamat,
-      clockOutDistanceM: geo.jarakM,
-      clockOutOutsideArea: geo.diLuarArea,
+      clockOutDistanceM: area.jarakM,
+      clockOutOutsideArea: area.diLuarArea,
       clockOutReason: posisi.alasan ?? null,
       menitLembur: nilai.menitLembur,
       durasiKerjaMenit: nilai.durasiKerjaMenit,

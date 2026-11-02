@@ -83,9 +83,11 @@ export async function GET(request: Request) {
   const profil = await bacaPengaturan("profil_perusahaan");
   const rentang = await rentangPeriode(tahun, bulan);
 
-  const [harian, hasilRekap, fee, kunci] = await Promise.all([
+  // Rekap lebih dulu: di situlah absen tanpa shift dinilai ulang, dan rincian
+  // hariannya harus membaca hasil yang sudah dinilai.
+  const hasilRekap = await rekapPeriodeAtauKunci({ ...rentang, employeeId });
+  const [harian, fee, kunci] = await Promise.all([
     rincianHarianLengkap(employeeId, rentang.mulai, rentang.akhir),
-    rekapPeriodeAtauKunci({ ...rentang, employeeId }),
     rincianFeePeriode({ ...rentang, employeeId }),
     kunciPeriode(rentang.mulai, rentang.akhir),
   ]);
@@ -138,6 +140,7 @@ export async function GET(request: Request) {
   // --- Ringkasan periode, angkanya dari rekap yang sama dengan layar.
   const ringkasan: [string, string | number][] = [
     ["Hadir", ringkas?.hadir ?? 0],
+    ["Jumlah shift", ringkas?.jumlahShift ?? 0],
     ["Tepat waktu", ringkas?.tepatWaktu ?? 0],
     ["Terlambat", ringkas?.terlambat ?? 0],
     ["Total telat", formatDurasi(ringkas?.menitTerlambat ?? 0)],
@@ -160,7 +163,7 @@ export async function GET(request: Request) {
     sel.alignment = { horizontal: "center" };
     sel.border = { bottom: { style: "thin", color: { argb: ABU } } };
   });
-  ws.getCell("J6").numFmt = '"Rp"#,##0';
+  ws.getCell("K6").numFmt = '"Rp"#,##0';
 
   // --- Tabel harian
   const judul = [

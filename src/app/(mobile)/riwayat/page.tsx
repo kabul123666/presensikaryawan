@@ -6,6 +6,7 @@ import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { locations, procedureCatalog } from "@/db/schema";
 import { LayarAbsen } from "@/features/attendance/layar-absen";
+import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
 import {
   absensiAktif,
   riwayatBulan,
@@ -15,7 +16,7 @@ import {
 import { bacaPengaturan } from "@/features/settings/service";
 import { wajibMasuk } from "@/lib/auth/session";
 import { cn, formatDurasi } from "@/lib/utils";
-import { HARI_PENDEK, jamWIB, namaBulan, tanggalWIB } from "@/lib/waktu";
+import { batasBulan, HARI_PENDEK, jamWIB, namaBulan, tanggalWIB } from "@/lib/waktu";
 
 export const metadata = { title: "Presensi" };
 
@@ -34,6 +35,12 @@ export default async function HalamanPresensi({
   const cocok = /^(\d{4})-(\d{2})$/.exec(sp.bulan ?? "");
   const tahun = cocok ? Number(cocok[1]) : tahunKini;
   const bulan = cocok ? Number(cocok[2]) : bulanKini;
+
+  // Absen tanpa shift yang shiftnya sudah ditetapkan admin dinilai dulu.
+  await nilaiUlangAbsensiTanpaShift({
+    employeeId: pengguna.employeeId,
+    ...batasBulan(tahun, bulan),
+  });
 
   const [absen, jadwal, kebijakan, daftar, ringkas] = await Promise.all([
     absensiAktif(pengguna.employeeId),
@@ -108,6 +115,7 @@ export default async function HalamanPresensi({
           }
           isiFormTindakan={pengguna.isiFormTindakan}
           daftarTindakan={daftarTindakan}
+          bebasLokasi={pengguna.role === "MANAGER"}
         />
 
         {/* ---------------------------------------------- Rekap kehadiran */}
@@ -259,7 +267,10 @@ export default async function HalamanPresensi({
                         )}
                         {d.flags.includes("WFH") ? (
                           <p className="text-status-leave text-[12px] font-semibold">
-                            Bekerja dari rumah ({d.clockInDistanceM} m dari klinik)
+                            Bekerja dari rumah
+                            {d.clockInDistanceM !== null
+                              ? ` (${d.clockInDistanceM} m dari klinik)`
+                              : ""}
                           </p>
                         ) : (
                           d.clockInOutsideArea && (

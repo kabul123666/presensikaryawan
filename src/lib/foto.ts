@@ -26,8 +26,9 @@ export type MetaWatermark = {
   lng: number;
   akurasiM: number | null;
   diLuarArea: boolean;
-  jarakM: number;
-  namaLokasi: string;
+  /** Null bila tidak ada cabang yang dinilai (kepala unit tanpa cabang). */
+  jarakM: number | null;
+  namaLokasi: string | null;
   namaKaryawan: string;
 };
 
@@ -54,9 +55,12 @@ function panelSvg(lebar: number, tinggi: number, meta: MetaWatermark) {
   const barisKoordinat = `${meta.lat.toFixed(5)}, ${meta.lng.toFixed(5)}${
     meta.akurasiM ? ` · ±${Math.round(meta.akurasiM)} m` : ""
   }`;
-  const barisArea = meta.diLuarArea
-    ? `Di luar area · ${meta.jarakM} m dari ${potong(meta.namaLokasi, 22)}`
-    : `Dalam area ${potong(meta.namaLokasi, 26)} · ${meta.jarakM} m`;
+  const barisArea =
+    meta.namaLokasi === null || meta.jarakM === null
+      ? "Kepala unit · bebas lokasi"
+      : meta.diLuarArea
+        ? `Di luar area · ${meta.jarakM} m dari ${potong(meta.namaLokasi, 22)}`
+        : `Dalam area ${potong(meta.namaLokasi, 26)} · ${meta.jarakM} m`;
 
   const tinggiPanel = 132;
   const y = tinggi - tinggiPanel;

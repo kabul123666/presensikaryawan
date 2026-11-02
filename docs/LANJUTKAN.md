@@ -162,6 +162,20 @@ dibuat. Saran: tetapkan shift di awal periode berikutnya, bukan di tengah.
 - **WFH bukan pengajuan.** Ia kewenangan yang melekat pada peran Kepala Unit —
   boleh absen dari luar area, foto tetap wajib, hari itu ditandai `WFH`.
 
+- **Jam istirahat tidak dipotong** (revisi November 2026). Jam kerja = jam
+  pulang − jam masuk apa adanya; kolom istirahat dihapus dari form Shift dan
+  migrasi `0009` menghitung ulang absensi lama (periode terkunci dilewati).
+- **Shift bernama "Full" dihitung dua shift** di kolom "Jumlah shift" rekap,
+  rincian, dan Excel — atas pilihan pemilik, dicocokkan dari nama
+  (`POLA_FULL_SHIFT` di `features/reports/service.ts`).
+- **Absen tanpa shift dinilai ulang** begitu shiftnya ditetapkan (roster atau
+  shift default karyawan), lewat `nilaiUlangAbsensiTanpaShift`. Ikut dipanggil
+  saat rekap dibuka sebagai jaring pengaman. Lembur yang muncul diajukan untuk
+  persetujuan seperti biasa. Asimetri yang dicatat di bagian Trial di atas
+  karena itu tidak berlaku lagi.
+- **Kepala unit bebas lokasi sepenuhnya**: tidak perlu cabang maupun shift
+  diatur admin lebih dulu, dan tidak diminta alasan saat di luar area.
+
 - **Ikatan perangkat dicabut** atas permintaan pemilik. Aplikasi boleh dibuka
   dan dipasang di perangkat mana pun. Kolom `employees.device_fingerprint` dan
   jenis pengajuan `DEVICE_CHANGE` sengaja disisakan supaya baris lama tetap

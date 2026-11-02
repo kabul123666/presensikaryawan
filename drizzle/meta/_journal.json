@@ -64,6 +64,13 @@
       "when": 1787825134611,
       "tag": "0008_flippant_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793635134640,
+      "tag": "0009_tanpa_istirahat",
+      "breakpoints": true
     }
   ]
 }

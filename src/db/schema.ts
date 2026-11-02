@@ -171,7 +171,11 @@ export const shifts = pgTable("shifts", {
   ambangLemburMenit: integer("ambang_lembur_menit").notNull().default(30),
   /** 0 = Minggu … 6 = Sabtu */
   hariKerja: jsonb("hari_kerja").$type<number[]>().notNull().default([1, 2, 3, 4, 5]),
-  istirahatMenit: integer("istirahat_menit").notNull().default(60),
+  /**
+   * Tidak lagi dipakai: jam kerja dihitung utuh tanpa potongan istirahat.
+   * Kolomnya disisakan agar baris lama tetap terbaca.
+   */
+  istirahatMenit: integer("istirahat_menit").notNull().default(0),
   /** Mencegah absen kepagian dari rumah. */
   batasClockinDiniMenit: integer("batas_clockin_dini_menit").notNull().default(60),
   warna: varchar("warna", { length: 16 }).notNull().default("#14a07c"),
