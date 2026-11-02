@@ -168,11 +168,23 @@ dibuat. Saran: tetapkan shift di awal periode berikutnya, bukan di tengah.
 - **Shift bernama "Full" dihitung dua shift** di kolom "Jumlah shift" rekap,
   rincian, dan Excel — atas pilihan pemilik, dicocokkan dari nama
   (`POLA_FULL_SHIFT` di `features/reports/service.ts`).
-- **Absen tanpa shift dinilai ulang** begitu shiftnya ditetapkan (roster atau
-  shift default karyawan), lewat `nilaiUlangAbsensiTanpaShift`. Ikut dipanggil
-  saat rekap dibuka sebagai jaring pengaman. Lembur yang muncul diajukan untuk
-  persetujuan seperti biasa. Asimetri yang dicatat di bagian Trial di atas
-  karena itu tidak berlaku lagi.
+- **Absensi selalu mengikuti jadwal yang berlaku** (`nilaiUlangAbsensi`):
+  setiap baris dinilai ulang memakai shift yang berlaku sekarang — roster
+  menimpa shift default — dan hanya yang hasilnya berbeda yang ditulis.
+  Dipanggil saat jadwal/shift default diubah dan saat rekap, jadwal jaga,
+  evaluasi, atau riwayat karyawan dibuka. Periode terkunci, lembur yang sudah
+  disetujui/ditolak, dan lembur pada baris koreksi tidak diubah; pengajuan
+  lembur yang masih menunggu disesuaikan atau dibatalkan. Asimetri di bagian
+  Trial di atas karena itu tidak berlaku lagi.
+- **Alpa baru dihitung sejak akun karyawan dibuat** (atau tanggal masuk bila
+  lebih belakang), supaya evaluasi setahun tidak menagih bulan-bulan sebelum
+  aplikasi dipakai.
+- **Jadwal Jaga menampilkan riwayat**: tanggal lewat diberi garis status
+  (hadir/telat/alpa/cuti), dan sel tanpa jadwal tertulis diisi dari shift
+  yang dijalani (pudar) atau "A" untuk alpa.
+- **Evaluasi Karyawan** (`/admin/evaluasi`, kunci menu `evaluasi`): rekap 3/6/12
+  periode gaji ke belakang. Migrasi `0010` menambahkan kuncinya ke hak akses
+  yang tersimpan bagi peran yang sudah boleh membuka Rekap Absensi.
 - **Kepala unit bebas lokasi sepenuhnya**: tidak perlu cabang maupun shift
   diatur admin lebih dulu, dan tidak diminta alasan saat di luar area.
 

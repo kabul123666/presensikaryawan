@@ -14,9 +14,38 @@ import {
   aksiSetJadwal,
   type HasilRoster,
 } from "./actions";
+import type { TandaHarian } from "@/features/reports/service";
 import type { KaryawanRoster, ShiftRoster } from "./service";
 
 type Isi = Record<string, { shiftId: string | null; libur: boolean }>;
+
+/** Warna garis bawah sel untuk kehadiran yang sebenarnya terjadi. */
+const GARIS_KEHADIRAN: Record<TandaHarian["status"], string> = {
+  HADIR: "bg-status-ontime",
+  TELAT: "bg-status-late",
+  ALPA: "bg-status-absent",
+  CUTI: "bg-status-leave",
+  IZIN: "bg-status-leave",
+};
+
+const LABEL_KEHADIRAN: Record<TandaHarian["status"], string> = {
+  HADIR: "Hadir",
+  TELAT: "Terlambat",
+  ALPA: "Alpa (tidak masuk tanpa keterangan)",
+  CUTI: "Cuti",
+  IZIN: "Izin / sakit",
+};
+
+/** Keterangan sel saat disorot: jadwalnya, lalu apa yang sebenarnya terjadi. */
+function keteranganSel(jadwal: string, tanda: TandaHarian | undefined) {
+  if (!tanda) return jadwal;
+  const bagian = [LABEL_KEHADIRAN[tanda.status]];
+  if (tanda.shiftNama) bagian.push(`shift ${tanda.shiftNama}`);
+  if (tanda.jamMasuk) bagian.push(`masuk ${tanda.jamMasuk}`);
+  if (tanda.jamPulang) bagian.push(`pulang ${tanda.jamPulang}`);
+  if (tanda.menitTerlambat > 0) bagian.push(`telat ${tanda.menitTerlambat} menit`);
+  return `${jadwal}\n${bagian.join(" · ")}`;
+}
 
 /** Huruf pendek untuk sel: "Pagi" -> "P", "Non-Shift" -> "N". */
 function inisialShift(nama: string) {
@@ -30,6 +59,7 @@ export function PanelRoster({
   karyawan,
   shift,
   isiAwal,
+  kehadiran,
 }: {
   tahun: number;
   bulan: number;
@@ -38,6 +68,8 @@ export function PanelRoster({
   karyawan: KaryawanRoster[];
   shift: ShiftRoster[];
   isiAwal: Isi;
+  /** Kehadiran sebenarnya per "employeeId|tanggal", untuk tanggal yang sudah lewat. */
+  kehadiran: Record<string, TandaHarian>;
 }) {
   const router = useRouter();
   const [isi, setIsi] = useState<Isi>(isiAwal);
@@ -187,6 +219,11 @@ export function PanelRoster({
               const jaga = hari.filter(
                 (h) => isi[`${k.id}|${h.tanggal}`]?.shiftId,
               ).length;
+              const hitung = (status: TandaHarian["status"]) =>
+                hari.filter((h) => kehadiran[`${k.id}|${h.tanggal}`]?.status === status)
+                  .length;
+              const telat = hitung("TELAT");
+              const alpa = hitung("ALPA");
 
               return (
                 <tr key={k.id} className="hover:bg-surface-muted/60">
@@ -195,11 +232,41 @@ export function PanelRoster({
                     <p className="text-subtle truncate text-[11px]">
                       {k.jabatan ?? "Jabatan belum diatur"}
                     </p>
+                    {(telat > 0 || alpa > 0) && (
+                      <p className="tnum mt-0.5 text-[10px] font-semibold">
+                        {telat > 0 && (
+                          <span className="text-status-late">Telat {telat}×</span>
+                        )}
+                        {telat > 0 && alpa > 0 && (
+                          <span className="text-subtle"> · </span>
+                        )}
+                        {alpa > 0 && (
+                          <span className="text-status-absent">Alpa {alpa}×</span>
+                        )}
+                      </p>
+                    )}
                   </td>
 
                   {hari.map((h) => {
                     const sel = isi[`${k.id}|${h.tanggal}`];
+                    const tanda = kehadiran[`${k.id}|${h.tanggal}`];
                     const warna = sel?.shiftId ? warnaShift.get(sel.shiftId) : undefined;
+
+                    // Tanpa jadwal tertulis, sel bulan lalu tetap terisi dari
+                    // absensinya: shift yang dijalani, atau A untuk alpa.
+                    const dariAbsen = !sel && tanda;
+                    const warnaAbsen = dariAbsen && tanda.warna ? tanda.warna : undefined;
+                    const hurufAbsen = !dariAbsen
+                      ? null
+                      : tanda.status === "ALPA"
+                        ? "A"
+                        : tanda.status === "CUTI"
+                          ? "C"
+                          : tanda.status === "IZIN"
+                            ? "I"
+                            : tanda.shiftNama
+                              ? inisialShift(tanda.shiftNama)
+                              : "H";
 
                     return (
                       <td
@@ -216,30 +283,52 @@ export function PanelRoster({
                              penuh, dan membekukan grid tiap simpan membuatnya
                              terasa macet. Tampilan sudah diperbarui lebih dulu
                              secara optimistis, dan kegagalan memicu muat ulang. */
-                          title={
+                          title={keteranganSel(
                             sel?.libur
                               ? "Libur"
                               : sel?.shiftId
-                                ? namaShift.get(sel.shiftId)
-                                : "Belum dijadwalkan"
-                          }
+                                ? (namaShift.get(sel.shiftId) ?? "Shift")
+                                : "Belum dijadwalkan",
+                            tanda,
+                          )}
                           aria-label={`Jadwal ${k.nama} tanggal ${h.tgl}`}
                           className={cn(
-                            "grid h-9 w-full place-items-center text-[11px] font-semibold transition-colors",
+                            "relative grid h-9 w-full place-items-center text-[11px] font-semibold transition-colors",
                             sel?.libur && "text-subtle bg-ink-100 dark:bg-ink-800",
-                            !sel && "text-subtle hover:bg-ink-100 dark:hover:bg-ink-800",
+                            !sel &&
+                              !warnaAbsen &&
+                              "text-subtle hover:bg-ink-100 dark:hover:bg-ink-800",
+                            hurufAbsen === "A" && "text-status-absent",
+                            (hurufAbsen === "C" || hurufAbsen === "I") &&
+                              "text-status-leave",
+                            hurufAbsen === "H" && "text-status-ontime",
                           )}
                           style={
                             sel?.shiftId && warna
                               ? { backgroundColor: warna, color: "#fff" }
-                              : undefined
+                              : warnaAbsen
+                                ? {
+                                    backgroundColor: warnaAbsen,
+                                    color: "#fff",
+                                    opacity: 0.75,
+                                  }
+                                : undefined
                           }
                         >
                           {sel?.libur
                             ? "L"
                             : sel?.shiftId
                               ? inisialShift(namaShift.get(sel.shiftId) ?? "?")
-                              : "·"}
+                              : (hurufAbsen ?? "·")}
+                          {tanda && (
+                            <span
+                              aria-hidden
+                              className={cn(
+                                "absolute inset-x-0.5 bottom-0.5 h-[3px] rounded-full",
+                                GARIS_KEHADIRAN[tanda.status],
+                              )}
+                            />
+                          )}
                         </button>
                       </td>
                     );
@@ -304,6 +393,21 @@ export function PanelRoster({
             ·
           </span>
           Ikut shift default karyawan
+        </span>
+      </div>
+
+      {/* Keterangan kehadiran sebenarnya */}
+      <div className="text-subtle flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+        <span className="text-body font-medium">Kehadiran:</span>
+        {(["HADIR", "TELAT", "ALPA", "CUTI"] as const).map((s) => (
+          <span key={s} className="flex items-center gap-1.5">
+            <span className={cn("h-[3px] w-4 rounded-full", GARIS_KEHADIRAN[s])} />
+            {s === "CUTI" ? "Cuti / izin" : LABEL_KEHADIRAN[s].split(" (")[0]}
+          </span>
+        ))}
+        <span>
+          Sel pudar = shift yang dijalani tanpa jadwal tertulis · A = alpa · arahkan
+          kursor untuk jam masuk &amp; pulang
         </span>
       </div>
     </div>

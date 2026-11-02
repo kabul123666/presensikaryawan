@@ -4,7 +4,7 @@ import { and, desc, eq, gte, lte } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import { periodLocks, users } from "@/db/schema";
-import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
+import { nilaiUlangAbsensi } from "@/features/attendance/nilai-ulang";
 import { rekapPeriode, type BarisRekap, type FilterRekap } from "./service";
 
 /**
@@ -124,9 +124,9 @@ export async function daftarKunci(batas = 24) {
 export async function rekapPeriodeAtauKunci(filter: FilterRekap) {
   const beku = await rekapTerkunci(filter.mulai, filter.akhir);
   if (!beku) {
-    // Jaring pengaman: absen tanpa shift yang shiftnya sudah ditetapkan admin
-    // dinilai dulu, supaya rekap tidak pernah menampilkan angka yang basi.
-    await nilaiUlangAbsensiTanpaShift({
+    // Jaring pengaman: absen diselaraskan dulu dengan jadwal yang berlaku,
+    // supaya rekap tidak pernah menampilkan angka dari shift yang sudah diganti.
+    await nilaiUlangAbsensi({
       employeeId: filter.employeeId,
       mulai: filter.mulai,
       akhir: filter.akhir,

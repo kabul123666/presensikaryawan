@@ -6,7 +6,7 @@ import { BadgeAbsen } from "@/components/ui/status";
 import { getDb } from "@/db/client";
 import { locations, procedureCatalog } from "@/db/schema";
 import { LayarAbsen } from "@/features/attendance/layar-absen";
-import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
+import { nilaiUlangAbsensi } from "@/features/attendance/nilai-ulang";
 import {
   absensiAktif,
   riwayatBulan,
@@ -36,8 +36,8 @@ export default async function HalamanPresensi({
   const tahun = cocok ? Number(cocok[1]) : tahunKini;
   const bulan = cocok ? Number(cocok[2]) : bulanKini;
 
-  // Absen tanpa shift yang shiftnya sudah ditetapkan admin dinilai dulu.
-  await nilaiUlangAbsensiTanpaShift({
+  // Absen diselaraskan dulu dengan jadwal yang berlaku sekarang.
+  await nilaiUlangAbsensi({
     employeeId: pengguna.employeeId,
     ...batasBulan(tahun, bulan),
   });

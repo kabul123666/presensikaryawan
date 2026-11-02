@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { getDb } from "@/db/client";
 import { auditLogs, shiftSchedules } from "@/db/schema";
-import { nilaiUlangAbsensiTanpaShift } from "@/features/attendance/nilai-ulang";
+import { nilaiUlangAbsensi } from "@/features/attendance/nilai-ulang";
 import { PERAN_ADMIN, wajibPeran } from "@/lib/auth/session";
 import { batasBulan, geserTanggal, selisihHari } from "@/lib/waktu";
 
@@ -94,8 +94,8 @@ export async function aksiSetJadwal(
       });
   }
 
-  // Absen yang terlanjur tercatat tanpa shift pada tanggal ini ikut dinilai.
-  await nilaiUlangAbsensiTanpaShift({
+  // Absen pada tanggal ini ikut dinilai ulang memakai jadwal barunya.
+  await nilaiUlangAbsensi({
     employeeId: d.employeeId,
     mulai: d.tanggal,
     akhir: d.tanggal,
@@ -133,7 +133,7 @@ export async function aksiIsiSebaris(
     bulan,
     shiftId,
   });
-  await nilaiUlangAbsensiTanpaShift({ employeeId, mulai, akhir });
+  await nilaiUlangAbsensi({ employeeId, mulai, akhir });
   segarkanAbsensi();
   return { ok: true, pesan: `Satu bulan penuh diisi untuk karyawan ini.` };
 }
@@ -160,7 +160,7 @@ export async function aksiKosongkanSebaris(
 
   await catat(pengguna.userId, "KOSONGKAN_ROSTER", employeeId, { tahun, bulan });
   // Tanpa jadwal khusus, shift default karyawan yang berlaku.
-  await nilaiUlangAbsensiTanpaShift({ employeeId, mulai, akhir });
+  await nilaiUlangAbsensi({ employeeId, mulai, akhir });
   segarkanAbsensi();
   return { ok: true, pesan: "Jadwal bulan ini dikosongkan." };
 }
@@ -226,7 +226,7 @@ export async function aksiSalinBulanLalu(
     dari: `${tahunLalu}-${bulanLalu}`,
     tersalin,
   });
-  await nilaiUlangAbsensiTanpaShift({ mulai: tujuan.mulai, akhir: tujuan.akhir });
+  await nilaiUlangAbsensi({ mulai: tujuan.mulai, akhir: tujuan.akhir });
   segarkanAbsensi();
   return { ok: true, pesan: `${tersalin} jadwal disalin dari bulan sebelumnya.` };
 }

@@ -31,6 +31,7 @@ import { PERAN_TANPA_ABSEN } from "@/lib/auth/session";
 import {
   geserTanggal,
   hariPekanWIB,
+  jamWIB,
   periodeRekap,
   rentangTanggal,
   selisihHari,
@@ -375,13 +376,40 @@ export async function opsiPenyaring() {
  * menjalankan ulang apa pun.
  */
 export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, number>> {
+  const hasil: Record<string, number> = {};
+  for (const kunci of await hariAlpa(filter)) {
+    const employeeId = kunci.slice(0, kunci.indexOf("|"));
+    hasil[employeeId] = (hasil[employeeId] ?? 0) + 1;
+  }
+  return hasil;
+}
+
+/**
+ * Tanggal pertama seseorang bisa dianggap alpa.
+ *
+ * Sebelum akunnya dibuat ia tidak mungkin absen, jadi hari-hari itu bukan
+ * alpa — walau tanggal masuk kerjanya jauh lebih awal. Tanpa batas ini,
+ * evaluasi setahun menagih alpa untuk bulan-bulan sebelum aplikasi dipakai.
+ */
+function mulaiDihitung(k: { tanggalMasuk: string | null; dibuatAt: Date }) {
+  const dibuat = tanggalWIB(k.dibuatAt);
+  return k.tanggalMasuk && k.tanggalMasuk > dibuat ? k.tanggalMasuk : dibuat;
+}
+
+/**
+ * Daftar hari alpa sebagai kunci "employeeId|tanggal".
+ *
+ * Satu-satunya tempat aturan alpa ditulis: rekap menjumlahkannya lewat
+ * `hitungAlpa`, jadwal jaga menandai tanggalnya satu per satu.
+ */
+export async function hariAlpa(filter: FilterRekap): Promise<string[]> {
   const db = await getDb();
   const { mulai, akhir } = filter;
 
   // Alpa hanya dihitung sampai kemarin — hari ini belum tentu selesai.
   const kemarin = geserTanggal(tanggalWIB(), -1);
   const batasAkhir = akhir <= kemarin ? akhir : kemarin;
-  if (selisihHari(mulai, batasAkhir) < 0) return {};
+  if (selisihHari(mulai, batasAkhir) < 0) return [];
 
   const syaratKaryawan = [
     eq(employees.aktif, true),
@@ -405,6 +433,7 @@ export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, nu
       .select({
         id: employees.id,
         tanggalMasuk: employees.tanggalMasuk,
+        dibuatAt: employees.createdAt,
         hariKerja: shifts.hariKerja,
       })
       .from(employees)
@@ -441,14 +470,12 @@ export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, nu
     roster.map((r) => [`${r.employeeId}|${r.tanggal}`, r] as const),
   );
 
-  const hasil: Record<string, number> = {};
+  const hasil: string[] = [];
 
   for (const k of daftarKaryawan) {
-    let alpa = 0;
-
     for (const tanggal of rentangTanggal(mulai, batasAkhir)) {
       // Belum bekerja di tanggal itu — bukan alpa.
-      if (k.tanggalMasuk && tanggal < k.tanggalMasuk) continue;
+      if (tanggal < mulaiDihitung(k)) continue;
       if (setLibur.has(tanggal)) continue;
       if (setAbsen.has(`${k.id}|${tanggal}`)) continue;
 
@@ -464,10 +491,88 @@ export async function hitungAlpa(filter: FilterRekap): Promise<Record<string, nu
         if (!k.hariKerja.includes(dow)) continue;
       }
 
-      alpa++;
+      hasil.push(`${k.id}|${tanggal}`);
     }
+  }
 
-    if (alpa > 0) hasil[k.id] = alpa;
+  return hasil;
+}
+
+/* ==========================================================================
+ * Riwayat kehadiran per tanggal (jadwal jaga)
+ * ========================================================================== */
+
+export type TandaHarian = {
+  status: "HADIR" | "TELAT" | "ALPA" | "CUTI" | "IZIN";
+  /** Shift yang benar-benar dipakai menilai absen hari itu. */
+  shiftNama: string | null;
+  warna: string | null;
+  jamMasuk: string | null;
+  jamPulang: string | null;
+  menitTerlambat: number;
+};
+
+/**
+ * Apa yang sebenarnya terjadi tiap tanggal, dikunci "employeeId|tanggal".
+ *
+ * Jadwal jaga hanya menyimpan rencana, dan bulan-bulan sebelum roster dipakai
+ * kalendernya kosong walau orangnya hadir setiap hari. Penanda ini diambil
+ * dari absensi itu sendiri — ditambah hari alpa — sehingga kalender bulan
+ * lalu tetap bisa dipakai menilai kehadiran seseorang.
+ */
+export async function kehadiranHarian(
+  mulai: string,
+  akhir: string,
+): Promise<Record<string, TandaHarian>> {
+  const db = await getDb();
+
+  const [baris, alpa] = await Promise.all([
+    db
+      .select({
+        employeeId: attendances.employeeId,
+        tanggal: attendances.tanggal,
+        status: attendances.status,
+        clockInAt: attendances.clockInAt,
+        clockOutAt: attendances.clockOutAt,
+        menitTerlambat: attendances.menitTerlambat,
+        shiftNama: shifts.nama,
+        warna: shifts.warna,
+      })
+      .from(attendances)
+      .leftJoin(shifts, eq(shifts.id, attendances.shiftId))
+      .where(and(gte(attendances.tanggal, mulai), lte(attendances.tanggal, akhir))),
+    hariAlpa({ mulai, akhir }),
+  ]);
+
+  const hasil: Record<string, TandaHarian> = {};
+
+  for (const b of baris) {
+    let status: TandaHarian["status"] | null = null;
+    if (b.status === "ON_LEAVE") status = "CUTI";
+    else if (b.status === "ON_PERMIT") status = "IZIN";
+    else if (b.status === "ABSENT") status = "ALPA";
+    else if (b.clockInAt) status = b.menitTerlambat > 0 ? "TELAT" : "HADIR";
+    if (!status) continue;
+
+    hasil[`${b.employeeId}|${b.tanggal}`] = {
+      status,
+      shiftNama: b.clockInAt ? b.shiftNama : null,
+      warna: b.clockInAt ? b.warna : null,
+      jamMasuk: b.clockInAt ? jamWIB(b.clockInAt) : null,
+      jamPulang: b.clockOutAt ? jamWIB(b.clockOutAt) : null,
+      menitTerlambat: b.menitTerlambat,
+    };
+  }
+
+  for (const kunci of alpa) {
+    hasil[kunci] ??= {
+      status: "ALPA",
+      shiftNama: null,
+      warna: null,
+      jamMasuk: null,
+      jamPulang: null,
+      menitTerlambat: 0,
+    };
   }
 
   return hasil;
@@ -536,6 +641,7 @@ export async function rincianHarianLengkap(
   const [karyawan] = await db
     .select({
       tanggalMasuk: employees.tanggalMasuk,
+      dibuatAt: employees.createdAt,
       hariKerja: shifts.hariKerja,
       namaShift: shifts.nama,
     })
@@ -619,7 +725,7 @@ export async function rincianHarianLengkap(
       hasilKoreksi: false,
     };
 
-    if (karyawan?.tanggalMasuk && tanggal < karyawan.tanggalMasuk) {
+    if (karyawan && tanggal < mulaiDihitung(karyawan)) {
       hasil.push({
         ...kosong,
         status: "—",

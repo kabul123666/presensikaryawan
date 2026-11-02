@@ -1,36 +1,58 @@
 import "server-only";
 
-import { and, eq, gte, isNotNull, isNull, lte, sql, type SQL } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
-import { attendances, employees, periodLocks, requests } from "@/db/schema";
+import {
+  attendances,
+  employees,
+  holidays,
+  periodLocks,
+  requests,
+  shiftSchedules,
+  shifts,
+  type AttendanceStatus,
+} from "@/db/schema";
 import { langkahPersetujuan } from "@/features/approval/service";
-import { nilaiClockIn, nilaiClockOut, shiftBerlaku } from "./service";
+import { hariPekanWIB } from "@/lib/waktu";
+import { nilaiClockIn, nilaiClockOut } from "./service";
+
+/** Status yang bukan hasil penilaian jam, sehingga tidak pernah ditimpa di sini. */
+const STATUS_TETAP: AttendanceStatus[] = ["ON_LEAVE", "ON_PERMIT", "HOLIDAY", "DAY_OFF"];
 
 /**
- * Menilai ulang absensi yang tercatat tanpa shift.
+ * Menyelaraskan absensi dengan shift yang berlaku pada tanggalnya.
  *
- * Karyawan yang belum dijadwalkan tetap boleh absen, dan kehadirannya dicatat
- * apa adanya: tanpa terlambat, tanpa lembur. Begitu admin menetapkan shiftnya
- * — lewat jadwal jaga atau shift default karyawan — hari-hari itu harus ikut
- * dinilai memakai shift tersebut, persis seperti bila shiftnya sudah ada saat
- * absen terjadi. Sebelumnya baris lama dibiarkan tanpa shift selamanya.
+ * Terlambat, lembur, dan statusnya dihitung saat absen terjadi, memakai shift
+ * yang berlaku saat itu. Admin sering baru menyusun atau membetulkan jadwal
+ * jaga belakangan — karyawan tanpa shift yang sudah terlanjur absen, atau yang
+ * tercatat memakai shift default padahal hari itu ia jaga siang. Dahulu hanya
+ * baris tanpa shift yang dinilai ulang, sehingga karyawan yang jadwalnya
+ * diganti tetap terbaca terlambat berjam-jam di rekap.
  *
- * Hanya baris yang belum punya shift yang disentuh; absensi yang sejak awal
- * dinilai dengan shift tidak pernah diubah di sini. Periode yang sudah dikunci
- * juga dilewati karena angkanya sudah dipakai membayar orang.
+ * Kini setiap baris dinilai ulang memakai shift yang berlaku sekarang (roster
+ * menimpa shift default, sama persis dengan `shiftBerlaku`), dan hanya baris
+ * yang hasilnya berbeda yang ditulis. Batasannya:
  *
- * Lembur yang muncul dari penilaian ulang diajukan untuk persetujuan, sama
- * seperti lembur yang tercatat saat absen pulang.
+ * - Periode yang sudah dikunci tidak disentuh — angkanya sudah dipakai
+ *   membayar orang.
+ * - Hari yang sekarang tidak punya shift sama sekali dibiarkan apa adanya.
+ * - Menit lembur yang sudah diputuskan (pengajuan disetujui atau ditolak) dan
+ *   lembur pada baris hasil koreksi tidak diubah: keputusan atas upah tidak
+ *   boleh bergeser diam-diam. Pengajuan lembur yang masih menunggu ikut
+ *   disesuaikan, dan dibatalkan bila lemburnya hilang.
+ *
+ * Seluruh jadwal dimuat sekaligus, bukan per baris, supaya rekap setahun
+ * tetap cepat dibuka.
  */
-export async function nilaiUlangAbsensiTanpaShift(filter: {
+export async function nilaiUlangAbsensi(filter: {
   employeeId?: string;
   mulai?: string;
   akhir?: string;
 }): Promise<number> {
   const db = await getDb();
 
-  const syarat: SQL[] = [isNull(attendances.shiftId), isNotNull(attendances.clockInAt)];
+  const syarat: SQL[] = [isNotNull(attendances.clockInAt)];
   if (filter.employeeId) syarat.push(eq(attendances.employeeId, filter.employeeId));
   if (filter.mulai) syarat.push(gte(attendances.tanggal, filter.mulai));
   if (filter.akhir) syarat.push(lte(attendances.tanggal, filter.akhir));
@@ -41,18 +63,74 @@ export async function nilaiUlangAbsensiTanpaShift(filter: {
     .where(and(...syarat));
   if (daftar.length === 0) return 0;
 
-  const kunci = await db
-    .select({ mulai: periodLocks.mulai, akhir: periodLocks.akhir })
-    .from(periodLocks);
+  const tanggalAwal = daftar.reduce((a, b) => (b.tanggal < a ? b.tanggal : a), "9999");
+  const tanggalAkhir = daftar.reduce((a, b) => (b.tanggal > a ? b.tanggal : a), "0000");
+  const idKaryawan = [...new Set(daftar.map((b) => b.employeeId))];
 
-  let dinilai = 0;
+  const [kunci, semuaShift, liburNasional, roster, karyawan] = await Promise.all([
+    db.select({ mulai: periodLocks.mulai, akhir: periodLocks.akhir }).from(periodLocks),
+    db.select().from(shifts),
+    db
+      .select({ tanggal: holidays.tanggal })
+      .from(holidays)
+      .where(
+        and(gte(holidays.tanggal, tanggalAwal), lte(holidays.tanggal, tanggalAkhir)),
+      ),
+    db
+      .select({
+        employeeId: shiftSchedules.employeeId,
+        tanggal: shiftSchedules.tanggal,
+        shiftId: shiftSchedules.shiftId,
+        libur: shiftSchedules.libur,
+      })
+      .from(shiftSchedules)
+      .where(
+        and(
+          inArray(shiftSchedules.employeeId, idKaryawan),
+          gte(shiftSchedules.tanggal, tanggalAwal),
+          lte(shiftSchedules.tanggal, tanggalAkhir),
+        ),
+      ),
+    db
+      .select({
+        id: employees.id,
+        shiftId: employees.shiftId,
+        departmentId: employees.departmentId,
+        locationId: employees.locationId,
+      })
+      .from(employees)
+      .where(inArray(employees.id, idKaryawan)),
+  ]);
+
+  const petaShift = new Map(semuaShift.map((s) => [s.id, s]));
+  const setLibur = new Set(liburNasional.map((h) => h.tanggal));
+  const petaRoster = new Map(roster.map((r) => [`${r.employeeId}|${r.tanggal}`, r]));
+  const petaKaryawan = new Map(karyawan.map((k) => [k.id, k]));
+
+  // Tahap 1: hitung hasil yang seharusnya, kumpulkan yang berbeda.
+  const berubah: {
+    baris: (typeof daftar)[number];
+    shiftId: string;
+    menitTerlambat: number;
+    lemburHitung: number;
+    durasiKerjaMenit: number;
+    pulangCepat: boolean;
+    statusMasuk: AttendanceStatus;
+    flags: string[];
+  }[] = [];
 
   for (const baris of daftar) {
-    if (!baris.clockInAt) continue;
+    if (!baris.clockInAt || STATUS_TETAP.includes(baris.status)) continue;
     if (kunci.some((k) => baris.tanggal >= k.mulai && baris.tanggal <= k.akhir)) continue;
 
-    const { shift, libur } = await shiftBerlaku(baris.employeeId, baris.tanggal);
+    const jadwal = petaRoster.get(`${baris.employeeId}|${baris.tanggal}`);
+    if (jadwal?.libur) continue;
+    const shiftId = jadwal?.shiftId ?? petaKaryawan.get(baris.employeeId)?.shiftId;
+    const shift = shiftId ? petaShift.get(shiftId) : undefined;
     if (!shift) continue;
+
+    const dow = hariPekanWIB(new Date(`${baris.tanggal}T05:00:00Z`));
+    const libur = setLibur.has(baris.tanggal) || !shift.hariKerja.includes(dow);
 
     const masuk = nilaiClockIn(shift, baris.clockInAt);
     const pulang = baris.clockOutAt
@@ -62,66 +140,106 @@ export async function nilaiUlangAbsensiTanpaShift(filter: {
     const flags = baris.flags.filter((f) => f !== "TANPA_SHIFT");
     if (libur && !flags.includes("HARI_LIBUR")) flags.push("HARI_LIBUR");
 
-    const menitLembur = pulang?.menitLembur ?? 0;
+    const hasil = {
+      baris,
+      shiftId: shift.id,
+      menitTerlambat: masuk.menitTerlambat,
+      lemburHitung: pulang?.menitLembur ?? 0,
+      durasiKerjaMenit: pulang?.durasiKerjaMenit ?? baris.durasiKerjaMenit,
+      pulangCepat: pulang?.pulangCepat ?? false,
+      statusMasuk: masuk.status,
+      flags,
+    };
+
+    const sama =
+      baris.shiftId === hasil.shiftId &&
+      baris.menitTerlambat === hasil.menitTerlambat &&
+      baris.durasiKerjaMenit === hasil.durasiKerjaMenit &&
+      (baris.hasilKoreksi || baris.menitLembur === hasil.lemburHitung) &&
+      baris.flags.length === flags.length;
+    if (!sama) berubah.push(hasil);
+  }
+
+  if (berubah.length === 0) return 0;
+
+  // Tahap 2: pengajuan lembur yang sudah ada untuk baris-baris itu.
+  const pengajuanLembur = await db
+    .select({ id: requests.id, status: requests.status, payload: requests.payload })
+    .from(requests)
+    .where(
+      and(
+        eq(requests.tipe, "OVERTIME"),
+        inArray(
+          sql<string>`${requests.payload}->>'attendanceId'`,
+          berubah.map((b) => b.baris.id),
+        ),
+      ),
+    );
+  const petaPengajuan = new Map(
+    pengajuanLembur.map((p) => [String(p.payload.attendanceId), p] as const),
+  );
+
+  // Tahap 3: tulis.
+  for (const h of berubah) {
+    const { baris } = h;
+    const pengajuan = petaPengajuan.get(baris.id);
+    const sudahDiputuskan =
+      pengajuan?.status === "APPROVED" || pengajuan?.status === "REJECTED";
+
+    const menitLembur =
+      baris.hasilKoreksi || sudahDiputuskan ? baris.menitLembur : h.lemburHitung;
+
+    let status: AttendanceStatus = h.statusMasuk;
+    if (menitLembur > 0) status = "OVERTIME";
+    else if (h.pulangCepat) status = "EARLY_LEAVE";
 
     await db
       .update(attendances)
       .set({
-        shiftId: shift.id,
-        status: pulang?.status ?? masuk.status,
-        menitTerlambat: masuk.menitTerlambat,
+        shiftId: h.shiftId,
+        status,
+        menitTerlambat: h.menitTerlambat,
         menitLembur,
-        durasiKerjaMenit: pulang?.durasiKerjaMenit ?? baris.durasiKerjaMenit,
-        flags,
+        durasiKerjaMenit: h.durasiKerjaMenit,
+        flags: h.flags,
         updatedAt: new Date(),
       })
       .where(eq(attendances.id, baris.id));
 
-    if (menitLembur > 0) {
-      const [sudahDiajukan] = await db
-        .select({ id: requests.id })
-        .from(requests)
-        .where(
-          and(
-            eq(requests.tipe, "OVERTIME"),
-            sql`${requests.payload}->>'attendanceId' = ${baris.id}`,
-          ),
-        )
-        .limit(1);
+    if (baris.hasilKoreksi || sudahDiputuskan) continue;
 
-      if (!sudahDiajukan) {
-        const [karyawan] = await db
-          .select({
-            departmentId: employees.departmentId,
-            locationId: employees.locationId,
-          })
-          .from(employees)
-          .where(eq(employees.id, baris.employeeId))
-          .limit(1);
-
+    if (pengajuan?.status === "PENDING") {
+      if (menitLembur > 0) {
+        await db
+          .update(requests)
+          .set({ payload: { ...pengajuan.payload, menitLembur } })
+          .where(eq(requests.id, pengajuan.id));
+      } else {
+        await db
+          .update(requests)
+          .set({ status: "CANCELLED", selesaiAt: new Date() })
+          .where(eq(requests.id, pengajuan.id));
+      }
+    } else if (!pengajuan || pengajuan.status === "CANCELLED") {
+      if (menitLembur > 0) {
+        const k = petaKaryawan.get(baris.employeeId);
         await db.insert(requests).values({
           employeeId: baris.employeeId,
           tipe: "OVERTIME",
           status: "PENDING",
           totalStep: await langkahPersetujuan("OVERTIME", {
-            departmentId: karyawan?.departmentId ?? null,
-            locationId: karyawan?.locationId ?? null,
+            departmentId: k?.departmentId ?? null,
+            locationId: k?.locationId ?? null,
           }),
           alasan: (baris.catatanKerja ?? "Lembur dari penilaian ulang shift").slice(
             0,
             300,
           ),
-          payload: {
-            attendanceId: baris.id,
-            tanggal: baris.tanggal,
-            menitLembur,
-          },
+          payload: { attendanceId: baris.id, tanggal: baris.tanggal, menitLembur },
         });
       }
     }
-
-    dinilai++;
   }
 
-  return dinilai;
+  return berubah.length;
 }

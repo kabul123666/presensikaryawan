@@ -71,6 +71,13 @@
       "when": 1793635134640,
       "tag": "0009_tanpa_istirahat",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793637916687,
+      "tag": "0010_akses_evaluasi",
+      "breakpoints": true
     }
   ]
 }

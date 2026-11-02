@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { nilaiUlangAbsensi } from "@/features/attendance/nilai-ulang";
+import { kehadiranHarian } from "@/features/reports/service";
 import { PanelRoster } from "@/features/roster/panel-roster";
 import { jadwalBulan, karyawanRoster, shiftRoster } from "@/features/roster/service";
 import { wajibAksesMenu } from "@/lib/auth/akses";
@@ -27,13 +29,18 @@ export default async function HalamanJadwal({
   const tahun = cocok ? Number(cocok[1]) : Number(kini.slice(0, 4));
   const bulan = cocok ? Number(cocok[2]) : Number(kini.slice(5, 7));
 
-  const [karyawan, shift, isi] = await Promise.all([
+  const { mulai, akhir } = batasBulan(tahun, bulan);
+
+  // Absen bulan ini diselaraskan dulu dengan jadwalnya, baru riwayatnya dibaca.
+  await nilaiUlangAbsensi({ mulai, akhir });
+
+  const [karyawan, shift, isi, kehadiran] = await Promise.all([
     karyawanRoster(),
     shiftRoster(),
     jadwalBulan(tahun, bulan),
+    kehadiranHarian(mulai, akhir),
   ]);
 
-  const { mulai, akhir } = batasBulan(tahun, bulan);
   const jumlahHari = selisihHari(mulai, akhir) + 1;
   const hari = Array.from({ length: jumlahHari }, (_, i) => {
     const tanggal = geserTanggal(mulai, i);
@@ -59,7 +66,8 @@ export default async function HalamanJadwal({
           <h1 className="text-body text-xl font-semibold">Jadwal Jaga</h1>
           <p className="text-muted mt-1 max-w-2xl text-[13px]">
             Jadwal per tanggal menimpa shift default karyawan. Status terlambat dan lembur
-            dihitung terhadap shift yang berlaku pada tanggal tersebut.
+            dihitung terhadap shift yang berlaku pada tanggal tersebut. Tanggal yang sudah
+            lewat menampilkan kehadiran sebenarnya lewat garis warna di bawah sel.
           </p>
         </div>
 
@@ -91,6 +99,7 @@ export default async function HalamanJadwal({
         karyawan={karyawan}
         shift={shift}
         isiAwal={isi}
+        kehadiran={kehadiran}
       />
     </div>
   );

@@ -32,7 +32,8 @@ export default async function HalamanRekapAbsensi({
   const lingkup = await lingkupData(pengguna);
   const departmentId = lingkup.semua ? sp.dept : (lingkup.departmentId ?? undefined);
 
-  if (!lingkup.semua && !lingkup.departmentId) {
+  // Pemilik yang dibatasi per cabang tidak punya departemen, dan memang tidak perlu.
+  if (!lingkup.semua && !lingkup.departmentId && !lingkup.locationIds?.length) {
     return (
       <div className="grid min-h-[50dvh] place-items-center">
         <div className="max-w-md text-center">

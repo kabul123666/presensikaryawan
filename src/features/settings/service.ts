@@ -33,6 +33,7 @@ import {
 export const SEMUA_KUNCI_MENU = [
   "dashboard",
   "absensi",
+  "evaluasi",
   "anomali",
   "persetujuan",
   "tindakan",

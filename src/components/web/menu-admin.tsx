@@ -21,6 +21,7 @@ import {
   Users,
   Wallet,
   ShieldAlert,
+  TrendingUp,
 } from "lucide-react";
 
 /**
@@ -50,6 +51,12 @@ export const KELOMPOK = [
         href: "/admin/absensi",
         label: "Rekap Absensi",
         Ikon: CalendarRange,
+      },
+      {
+        kunci: "evaluasi",
+        href: "/admin/evaluasi",
+        label: "Evaluasi Karyawan",
+        Ikon: TrendingUp,
       },
       {
         kunci: "anomali",
